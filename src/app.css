@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+.checker-background {
+  background-color: transparent;
+  background-image: linear-gradient(#e5e7eb 1px, transparent 1px),
+    linear-gradient(to right, #e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+}
