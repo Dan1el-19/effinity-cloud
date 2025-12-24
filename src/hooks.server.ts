@@ -1,0 +1,38 @@
+import { createSessionClient, SESSION_COOKIE } from "$lib/clients/appwrite";
+import { redirect, type Handle } from "@sveltejs/kit";
+
+const PUBLIC_ROUTES = [
+    "/login",
+    "/register",
+    "/auth/callback"
+];
+
+export const handle: Handle = async ({ event, resolve }) => {
+    try {
+        const { account } = createSessionClient(event);
+
+        try {
+            event.locals.user = await account.get();
+        } catch (err) {
+            event.locals.user = undefined;
+        }
+
+        const isPublicRoute = PUBLIC_ROUTES.some((route) => {
+            return event.url.pathname === route;
+        });
+
+        if (!event.locals.user && !isPublicRoute) {
+            throw redirect(303, "/login");
+        }
+
+        if (event.locals.user && event.url.pathname === "/login") {
+            throw redirect(303, "/");
+        }
+
+        return resolve(event);
+    } catch (e: any) {
+        if (e?.status === 303) throw e;
+        console.error("Hooks Error:", e);
+        return new Response(`Internal Error: ${e.message} \nStack: ${e.stack}`, { status: 500 });
+    }
+};

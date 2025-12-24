@@ -15,9 +15,11 @@
     errorMessage = '';
 
     try {
-      // 1. Get presigned URL
       const res = await fetch('/api/simple-upload', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           name: file.name,
           size: file.size,
@@ -25,10 +27,14 @@
         })
       });
 
-      if (!res.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl } = await res.json();
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to get upload URL');
+      }
+      
+      const { uploadUrl } = data;
 
-      // 2. Upload to R2
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         body: file,
@@ -40,9 +46,8 @@
       if (!uploadRes.ok) throw new Error('Upload failed');
 
       status = 'success';
-      target.value = ''; // Reset input
+      target.value = '';
       
-      // Refresh list
       await invalidateAll();
       
       setTimeout(() => {
@@ -60,7 +65,6 @@
 <div class="p-8 max-w-4xl mx-auto font-sans">
   <h1 class="text-3xl font-bold mb-8 text-gray-800">Effinity Cloud</h1>
 
-  <!-- Upload Section -->
   <section class="mb-12 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
     <h2 class="text-xl font-semibold mb-4 text-gray-700">Upload File</h2>
     
@@ -88,7 +92,6 @@
     </div>
   </section>
 
-  <!-- Files List -->
   <section>
     <h2 class="text-xl font-semibold mb-4 text-gray-700">Bucket Contents</h2>
     

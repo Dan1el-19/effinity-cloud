@@ -57,6 +57,7 @@
 		"@aws-sdk/lib-storage": "^3.957.0",
 		"@aws-sdk/s3-request-presigner": "^3.957.0",
 		"appwrite": "^21.5.0",
+		"node-appwrite": "^21.0.0",
 		"uuid": "^13.0.0"
 	}
 }
