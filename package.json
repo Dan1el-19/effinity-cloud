@@ -59,6 +59,7 @@
 		"@uppy/aws-s3": "^5.1.0",
 		"@uppy/core": "^5.2.0",
 		"@uppy/dashboard": "^5.1.0",
+		"@uppy/golden-retriever": "^5.2.1",
 		"@uppy/svelte": "^5.0.2",
 		"appwrite": "^21.5.0",
 		"node-appwrite": "^21.0.0",

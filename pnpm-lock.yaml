@@ -26,6 +26,9 @@ importers:
       '@uppy/dashboard':
         specifier: ^5.1.0
         version: 5.1.0(@uppy/core@5.2.0)
+      '@uppy/golden-retriever':
+        specifier: ^5.2.1
+        version: 5.2.1(@uppy/core@5.2.0)
       '@uppy/svelte':
         specifier: ^5.0.2
         version: 5.0.2(@uppy/core@5.2.0)(@uppy/dashboard@5.1.0(@uppy/core@5.2.0))(svelte@5.46.0)
@@ -1337,6 +1340,11 @@ packages:
 
   '@uppy/dashboard@5.1.0':
     resolution: {integrity: sha512-TCuDbsAWokPO2LzubDoXyBskY/DHFB9tyDeHJe1FGBHrm0sY2zd+yEW7c4HNMDiIYCs/AdFJWAjQosCT07rD6Q==}
+    peerDependencies:
+      '@uppy/core': ^5.2.0
+
+  '@uppy/golden-retriever@5.2.1':
+    resolution: {integrity: sha512-R+Lzesfmgu35ViSOxqYxwOVo4ylkIS9xP2ClnhD8k2VTbqdc6RRimaPRqxxI3Vf42qWiRBm4WaG3uHls+wOCqQ==}
     peerDependencies:
       '@uppy/core': ^5.2.0
 
@@ -5030,6 +5038,12 @@ snapshots:
       nanoid: 5.1.6
       preact: 10.28.1
       shallow-equal: 3.1.0
+
+  '@uppy/golden-retriever@5.2.1(@uppy/core@5.2.0)':
+    dependencies:
+      '@uppy/core': 5.2.0
+      '@uppy/utils': 7.1.5
+      lodash: 4.17.21
 
   '@uppy/provider-views@5.2.2(@uppy/core@5.2.0)':
     dependencies:
