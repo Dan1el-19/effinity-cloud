@@ -1,4 +1,4 @@
-import { createSessionClient, SESSION_COOKIE } from '$lib/clients/appwrite';
+import { createSessionClient, SESSION_COOKIE } from '$lib/server/appwrite';
 import { redirect, type Handle } from '@sveltejs/kit';
 
 const PUBLIC_ROUTES = ['/login', '/register', '/auth/callback'];
