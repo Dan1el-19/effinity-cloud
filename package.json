@@ -53,9 +53,13 @@
 		"vitest-browser-svelte": "^2.0.1"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "^3.957.0",
-		"@aws-sdk/lib-storage": "^3.957.0",
-		"@aws-sdk/s3-request-presigner": "^3.957.0",
+		"@aws-sdk/client-s3": "^3.958.0",
+		"@aws-sdk/lib-storage": "^3.958.0",
+		"@aws-sdk/s3-request-presigner": "^3.958.0",
+		"@uppy/aws-s3": "^5.1.0",
+		"@uppy/core": "^5.2.0",
+		"@uppy/dashboard": "^5.1.0",
+		"@uppy/svelte": "^5.0.2",
 		"appwrite": "^21.5.0",
 		"node-appwrite": "^21.0.0",
 		"uuid": "^13.0.0"

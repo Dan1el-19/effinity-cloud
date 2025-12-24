@@ -4,7 +4,7 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			user: import("appwrite").Models.User<import("appwrite").Models.Preferences> | undefined;
+			user: import('appwrite').Models.User<import('appwrite').Models.Preferences> | undefined;
 		}
 		// interface PageData {}
 		// interface PageState {}
@@ -12,4 +12,4 @@ declare global {
 	}
 }
 
-export { };
+export {};
