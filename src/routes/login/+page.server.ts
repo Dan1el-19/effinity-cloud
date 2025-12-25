@@ -42,5 +42,17 @@ export const actions: Actions = {
 		});
 
 		throw redirect(302, redirectUrl);
+	},
+
+	google: async (event) => {
+		const { account } = createAdminClient();
+		const origin = event.url.origin;
+		const redirectUrl = await account.createOAuth2Token({
+			provider: OAuthProvider.Google,
+			success: `${origin}/auth/callback`,
+			failure: `${origin}/login?failure=true`
+		});
+
+		throw redirect(302, redirectUrl);
 	}
 };

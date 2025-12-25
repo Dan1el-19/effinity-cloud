@@ -33,7 +33,7 @@
 	const MAX_CHUNK_SIZE = 500 * MB;
 	const MAX_PARTS = 8000;
 	const MULTIPART_THRESHOLD = 50 * MB;
-	const CONCURRENT_PARTS = 5;
+	const CONCURRENT_PARTS = 10;
 
 	function getNetworkMultiplier(): number {
 		if (typeof navigator === 'undefined' || !('connection' in navigator)) {
@@ -89,7 +89,7 @@
 				maxFileSize,
 				allowedFileTypes
 			},
-			autoProceed: false
+			autoProceed: true
 		})
 			.use(Dashboard, {
 				inline: true,

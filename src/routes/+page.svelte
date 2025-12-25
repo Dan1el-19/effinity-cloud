@@ -2,7 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import UppyUploader from '$lib/components/UppyUploader.svelte';
-	import { Folder, FileText, Download, Pencil, Trash2 } from 'lucide-svelte';
+	import { Folder, FileText, Download, Pencil, Trash2, LogOut } from 'lucide-svelte';
 
 	let { data } = $props();
 	let uploadStatus = $state<'idle' | 'success' | 'error'>('idle');
@@ -169,6 +169,15 @@
 			>
 				{showCreateFolder ? 'Cancel' : 'New Folder'}
 			</button>
+			<form method="POST" action="/logout">
+				<button
+					type="submit"
+					class="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2 font-medium text-red-600 transition hover:bg-red-100"
+				>
+					<LogOut class="h-4 w-4" />
+					Logout
+				</button>
+			</form>
 		</div>
 	</header>
 
