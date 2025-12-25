@@ -21,8 +21,8 @@ export const actions: Actions = {
 			event.cookies.set(SESSION_COOKIE, session.secret, {
 				path: '/',
 				httpOnly: true,
-				secure: true,
-				sameSite: 'strict',
+				secure: event.url.protocol === 'https:',
+				sameSite: 'lax',
 				expires: new Date(session.expire)
 			});
 		} catch (e: any) {
@@ -34,11 +34,11 @@ export const actions: Actions = {
 
 	oauth: async (event) => {
 		const { account } = createAdminClient();
-
+		const origin = event.url.origin;
 		const redirectUrl = await account.createOAuth2Token({
 			provider: OAuthProvider.Github,
-			success: `${event.url.origin}/auth/callback`,
-			failure: `${event.url.origin}/login?failure=true`
+			success: `${origin}/auth/callback`,
+			failure: `${origin}/login?failure=true`
 		});
 
 		throw redirect(302, redirectUrl);
