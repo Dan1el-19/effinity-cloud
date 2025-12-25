@@ -8,7 +8,12 @@ import type { RequestHandler } from './$types';
 
 const EXPIRES_IN = 900;
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	const user = locals.user;
+	if (!user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
 	const { filename, type } = await request.json();
 
 	if (!filename || typeof filename !== 'string') {
@@ -19,14 +24,20 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'type is required' }, { status: 400 });
 	}
 
-	const key = `${uuid()}-${filename}`;
+	const fileUuid = uuid();
+	const ext = filename.split('.').pop();
+	const key = `${user.$id}/${fileUuid}.${ext}`;
 
 	const url = await getSignedUrl(
 		R2,
 		new PutObjectCommand({
 			Bucket: env.R2_BUCKET_NAME,
 			Key: key,
-			ContentType: type
+			ContentType: type,
+			Metadata: {
+				ownerId: user.$id,
+				originalName: filename
+			}
 		}),
 		{ expiresIn: EXPIRES_IN }
 	);
@@ -36,6 +47,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		method: 'PUT',
 		headers: {
 			'content-type': type
-		}
+		},
+		key,
+		fileId: fileUuid
 	});
 };

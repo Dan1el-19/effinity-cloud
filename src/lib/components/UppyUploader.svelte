@@ -9,7 +9,13 @@
 	import '@uppy/dashboard/css/style.min.css';
 
 	interface Props {
-		onUploadComplete?: (result: { key: string; location?: string }) => void;
+		onUploadComplete?: (result: {
+			key: string;
+			location?: string;
+			name: string;
+			size: number;
+			type: string;
+		}) => void;
 		onUploadError?: (error: Error) => void;
 		maxFileSize?: number | null;
 		allowedFileTypes?: string[];
@@ -56,7 +62,10 @@
 						throw new Error('Failed to get upload parameters');
 					}
 
-					return response.json();
+					const json = await response.json();
+					// Store the strictly generated key in file meta so we can access it later
+					file.meta['r2Key'] = json.key;
+					return json;
 				},
 
 				async createMultipartUpload(file) {
@@ -129,8 +138,11 @@
 				for (const file of result.successful) {
 					const body = file.response?.body as { location?: string } | undefined;
 					onUploadComplete?.({
-						key: file.name ?? 'unknown',
-						location: body?.location
+						key: (file.meta['r2Key'] as string) || file.name || 'unknown', // Use the verified R2 key
+						location: body?.location,
+						name: file.name || 'unknown',
+						size: file.size || 0,
+						type: file.type || 'application/octet-stream'
 					});
 				}
 			}
