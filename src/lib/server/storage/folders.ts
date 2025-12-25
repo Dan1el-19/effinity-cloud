@@ -1,8 +1,26 @@
 import { createAdminClient } from '$lib/server/appwrite';
 import { ID, Query } from 'node-appwrite';
+import { deleteR2Object } from './r2';
 
 const DATABASE_ID = 'main';
 const FOLDERS_TABLE = 'folders';
+const FILES_TABLE = 'files';
+
+export async function getFolder(folderId: string, userId: string) {
+	const { tablesDB } = createAdminClient();
+
+	const folder = await tablesDB.getRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId
+	});
+
+	if (folder.ownerId !== userId) {
+		throw new Error('Access denied: Folder does not belong to user.');
+	}
+
+	return folder;
+}
 
 export async function createFolder(userId: string, name: string, parentId: string | null = null) {
 	const { tablesDB } = createAdminClient();
@@ -55,4 +73,119 @@ export async function listFolders(userId: string, parentId: string | null = null
 		tableId: FOLDERS_TABLE,
 		queries
 	});
+}
+
+export async function renameFolder(folderId: string, newName: string, userId: string) {
+	const { tablesDB } = createAdminClient();
+
+	const folder = await tablesDB.getRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId
+	});
+
+	if (folder.ownerId !== userId) {
+		throw new Error('Access denied: Folder does not belong to user.');
+	}
+
+	return await tablesDB.updateRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId,
+		data: { name: newName }
+	});
+}
+
+export async function moveFolder(folderId: string, targetParentId: string | null, userId: string) {
+	const { tablesDB } = createAdminClient();
+
+	const folder = await tablesDB.getRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId
+	});
+
+	if (folder.ownerId !== userId) {
+		throw new Error('Access denied: Folder does not belong to user.');
+	}
+
+	if (targetParentId === folderId) {
+		throw new Error('Cannot move folder into itself.');
+	}
+
+	let newPath = '/';
+	if (targetParentId) {
+		const targetParent = await tablesDB.getRow({
+			databaseId: DATABASE_ID,
+			tableId: FOLDERS_TABLE,
+			rowId: targetParentId
+		});
+
+		if (targetParent.ownerId !== userId) {
+			throw new Error('Access denied: Target folder does not belong to user.');
+		}
+
+		if ((targetParent.path as string).includes(`/${folderId}/`)) {
+			throw new Error('Cannot move folder into its descendant.');
+		}
+
+		newPath = targetParent.path + targetParent.$id + '/';
+	}
+
+	return await tablesDB.updateRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId,
+		data: {
+			parentFolderId: targetParentId,
+			path: newPath
+		}
+	});
+}
+
+export async function deleteFolder(folderId: string, userId: string) {
+	const { tablesDB } = createAdminClient();
+
+	const folder = await tablesDB.getRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId
+	});
+
+	if (folder.ownerId !== userId) {
+		throw new Error('Access denied: Folder does not belong to user.');
+	}
+
+	const files = await tablesDB.listRows({
+		databaseId: DATABASE_ID,
+		tableId: FILES_TABLE,
+		queries: [Query.equal('parentFolderId', folderId)]
+	});
+
+	for (const file of files.rows) {
+		await deleteR2Object(file.r2Key as string);
+		await tablesDB.deleteRow({
+			databaseId: DATABASE_ID,
+			tableId: FILES_TABLE,
+			rowId: file.$id
+		});
+	}
+
+	const subfolders = await tablesDB.listRows({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		queries: [Query.equal('parentFolderId', folderId)]
+	});
+
+	for (const subfolder of subfolders.rows) {
+		await deleteFolder(subfolder.$id, userId);
+	}
+
+	await tablesDB.deleteRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId
+	});
+
+	return folder;
 }

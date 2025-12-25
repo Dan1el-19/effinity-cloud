@@ -82,7 +82,9 @@
 						throw new Error('Failed to create multipart upload');
 					}
 
-					return response.json();
+					const json = await response.json();
+					file.meta['r2Key'] = json.key;
+					return json;
 				},
 
 				async listParts(file, { uploadId, key }) {

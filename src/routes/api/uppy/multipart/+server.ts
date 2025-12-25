@@ -5,7 +5,12 @@ import { json } from '@sveltejs/kit';
 import { v4 as uuid } from 'uuid';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	const user = locals.user;
+	if (!user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
 	const { filename, type, metadata } = await request.json();
 
 	if (!filename || typeof filename !== 'string') {
@@ -16,13 +21,19 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'type is required' }, { status: 400 });
 	}
 
-	const key = `${uuid()}-${filename}`;
+	const fileUuid = uuid();
+	const ext = filename.split('.').pop();
+	const key = `${user.$id}/${fileUuid}.${ext}`;
 
 	const command = new CreateMultipartUploadCommand({
 		Bucket: env.R2_BUCKET_NAME,
 		Key: key,
 		ContentType: type,
-		Metadata: metadata
+		Metadata: {
+			...metadata,
+			ownerId: user.$id,
+			originalName: filename
+		}
 	});
 
 	const response = await R2.send(command);
