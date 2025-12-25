@@ -49,12 +49,14 @@ export async function createFile(metadata: FileMetadata) {
 		}
 	}
 
-	return await tablesDB.createRow({
+	const file = await tablesDB.createRow({
 		databaseId: DATABASE_ID,
 		tableId: FILES_TABLE,
 		rowId: ID.unique(),
 		data: metadata
 	});
+
+	return file;
 }
 
 export async function listFiles(userId: string, folderId: string | null = null) {
@@ -107,6 +109,12 @@ export async function moveFile(fileId: string, targetFolderId: string | null, us
 	});
 	if (file.ownerId !== userId) {
 		throw new Error('Access denied: File does not belong to user.');
+	}
+
+	const oldFolderId = file.parentFolderId as string | null;
+
+	if (oldFolderId === targetFolderId) {
+		return file;
 	}
 
 	if (targetFolderId) {

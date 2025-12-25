@@ -9,6 +9,14 @@
 	let statusMessage = $state('');
 	let showCreateFolder = $state(false);
 
+	function formatFileSize(bytes: number): string {
+		if (bytes === 0) return '0 B';
+		const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+		const i = Math.floor(Math.log(bytes) / Math.log(1024));
+		const size = bytes / Math.pow(1024, i);
+		return `${size.toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
+	}
+
 	async function handleUploadComplete(result: {
 		key: string;
 		location?: string;
@@ -262,7 +270,9 @@
 								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500"
 									>{new Date(folder.$createdAt).toLocaleDateString()}</td
 								>
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">-</td>
+								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500"
+									>{folder.size ? formatFileSize(folder.size) : '-'}</td
+								>
 								<td class="px-6 py-4 text-right">
 									<button
 										onclick={() => renameFolder(folder.$id, folder.name)}
@@ -292,7 +302,7 @@
 									>{new Date(file.$createdAt).toLocaleString()}</td
 								>
 								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-									{(file.size / 1024).toFixed(2)} KB
+									{formatFileSize(file.size)}
 								</td>
 								<td class="px-6 py-4 text-right">
 									<button

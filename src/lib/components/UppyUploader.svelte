@@ -26,6 +26,63 @@
 	let dashboardContainer: HTMLDivElement;
 	let uppy: Uppy | null = null;
 
+	const MB = 1024 * 1024;
+	const GB = 1024 * MB;
+
+	const MIN_CHUNK_SIZE = 25 * MB;
+	const MAX_CHUNK_SIZE = 500 * MB;
+	const MAX_PARTS = 8000;
+	const MULTIPART_THRESHOLD = 50 * MB;
+	const CONCURRENT_PARTS = 5;
+
+	function getNetworkMultiplier(): number {
+		if (typeof navigator === 'undefined' || !('connection' in navigator)) {
+			return 1;
+		}
+
+		const conn = navigator.connection as {
+			downlink?: number;
+			effectiveType?: string;
+		};
+
+		const downlink = conn?.downlink || 10;
+		const effectiveType = conn?.effectiveType || '4g';
+
+		if (downlink > 50 || effectiveType === '4g') {
+			return 1.5;
+		} else if (downlink < 5 || effectiveType === '3g' || effectiveType === '2g') {
+			return 0.5;
+		}
+
+		return 1;
+	}
+
+	function getChunkSize(file: { size: number }): number {
+		const fileSize = file.size ?? 0;
+
+		const safetySize = Math.ceil(fileSize / MAX_PARTS);
+
+		let tieredSize: number;
+		if (fileSize > 50 * GB) {
+			tieredSize = 100 * MB;
+		} else if (fileSize > 5 * GB) {
+			tieredSize = 50 * MB;
+		} else if (fileSize > 1 * GB) {
+			tieredSize = 32 * MB;
+		} else if (fileSize > 500 * MB) {
+			tieredSize = 28 * MB;
+		} else {
+			tieredSize = MIN_CHUNK_SIZE;
+		}
+
+		const networkMultiplier = getNetworkMultiplier();
+		const adjustedSize = Math.round(tieredSize * networkMultiplier);
+
+		const optimalSize = Math.max(safetySize, adjustedSize);
+
+		return Math.min(MAX_CHUNK_SIZE, Math.max(MIN_CHUNK_SIZE, optimalSize));
+	}
+
 	onMount(() => {
 		uppy = new Uppy({
 			restrictions: {
@@ -46,7 +103,9 @@
 				expires: 24 * 60 * 60 * 1000
 			})
 			.use(AwsS3, {
-				shouldUseMultipart: (file) => (file.size ?? 0) > 100 * 1024 * 1024,
+				shouldUseMultipart: (file) => (file.size ?? 0) > MULTIPART_THRESHOLD,
+				getChunkSize,
+				limit: CONCURRENT_PARTS,
 
 				async getUploadParameters(file) {
 					const response = await fetch('/api/uppy/sign', {
@@ -63,7 +122,6 @@
 					}
 
 					const json = await response.json();
-					// Store the strictly generated key in file meta so we can access it later
 					file.meta['r2Key'] = json.key;
 					return json;
 				},
@@ -140,7 +198,7 @@
 				for (const file of result.successful) {
 					const body = file.response?.body as { location?: string } | undefined;
 					onUploadComplete?.({
-						key: (file.meta['r2Key'] as string) || file.name || 'unknown', // Use the verified R2 key
+						key: (file.meta['r2Key'] as string) || file.name || 'unknown',
 						location: body?.location,
 						name: file.name || 'unknown',
 						size: file.size || 0,

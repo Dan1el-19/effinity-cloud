@@ -57,6 +57,33 @@ export async function createFolder(userId: string, name: string, parentId: strin
 	});
 }
 
+export async function calculateFolderSize(folderId: string): Promise<number> {
+	const { tablesDB } = createAdminClient();
+
+	const files = await tablesDB.listRows({
+		databaseId: DATABASE_ID,
+		tableId: FILES_TABLE,
+		queries: [Query.equal('parentFolderId', folderId)]
+	});
+
+	let totalSize = 0;
+	for (const file of files.rows) {
+		totalSize += (file.size as number) || 0;
+	}
+
+	const subfolders = await tablesDB.listRows({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		queries: [Query.equal('parentFolderId', folderId)]
+	});
+
+	for (const subfolder of subfolders.rows) {
+		totalSize += await calculateFolderSize(subfolder.$id);
+	}
+
+	return totalSize;
+}
+
 export async function listFolders(userId: string, parentId: string | null = null) {
 	const { tablesDB } = createAdminClient();
 	const queries = [Query.equal('ownerId', userId)];
@@ -68,11 +95,20 @@ export async function listFolders(userId: string, parentId: string | null = null
 	}
 	queries.push(Query.orderAsc('name'));
 
-	return await tablesDB.listRows({
+	const result = await tablesDB.listRows({
 		databaseId: DATABASE_ID,
 		tableId: FOLDERS_TABLE,
 		queries
 	});
+
+	const foldersWithSize = await Promise.all(
+		result.rows.map(async (folder) => {
+			const size = await calculateFolderSize(folder.$id);
+			return { ...folder, size } as typeof folder & { size: number };
+		})
+	);
+
+	return { ...result, rows: foldersWithSize };
 }
 
 export async function renameFolder(folderId: string, newName: string, userId: string) {
