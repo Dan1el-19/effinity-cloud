@@ -73,6 +73,14 @@
 			</p>
 		</div>
 		<div class="flex gap-4">
+			{#if data.role === 'admin'}
+				<a
+					href="/admin"
+					class="flex items-center rounded-lg bg-amber-50 px-4 py-2 font-medium text-amber-600 transition hover:bg-amber-100"
+				>
+					Panel Admin
+				</a>
+			{/if}
 			{#if data.role !== 'basic'}
 				<a
 					href="/main"

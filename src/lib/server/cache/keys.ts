@@ -25,5 +25,9 @@ export const CacheKeys = {
 
 	userFilesPrefix: (userId: string) => `files:list:${userId}:`,
 
-	userFoldersPrefix: (userId: string) => `folders:list:${userId}:`
+	userFoldersPrefix: (userId: string) => `folders:list:${userId}:`,
+
+	adminTotalUsers: () => 'admin:users:total',
+	adminTotalStorage: () => 'admin:storage:total',
+	adminUsersList: (page: number) => `admin:users:list:${page}`
 };

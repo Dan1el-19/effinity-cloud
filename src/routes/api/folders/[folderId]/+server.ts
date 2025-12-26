@@ -9,9 +9,15 @@ import {
 } from '$lib/server/storage/folders';
 import { getUserRole, MAIN_STORAGE_OWNER_ID } from '$lib/server/roles';
 
-async function checkAccess(folderId: string, user: any) {
+async function checkAccess(folderId: string, user: any, targetUserId?: string | null) {
 	const folder = await getFolderMetadata(folderId);
 	const role = getUserRole(user);
+
+	if (role === 'admin' && targetUserId) {
+		if (folder.ownerId === targetUserId) {
+			return { folder, effectiveUserId: targetUserId };
+		}
+	}
 
 	if (folder.ownerId === user.$id) return { folder, effectiveUserId: user.$id };
 
@@ -22,16 +28,17 @@ async function checkAccess(folderId: string, user: any) {
 	throw new Error('Access denied');
 }
 
-export const GET: RequestHandler = async ({ params, locals }) => {
+export const GET: RequestHandler = async ({ params, locals, url }) => {
 	const user = locals.user;
 	if (!user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
 	const { folderId } = params;
+	const targetUserId = url.searchParams.get('targetUserId');
 
 	try {
-		const { folder } = await checkAccess(folderId, user);
+		const { folder } = await checkAccess(folderId, user, targetUserId);
 		return json(folder);
 	} catch (error: any) {
 		if (error.message.includes('Access denied')) {
@@ -41,16 +48,17 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	}
 };
 
-export const DELETE: RequestHandler = async ({ params, locals }) => {
+export const DELETE: RequestHandler = async ({ params, locals, url }) => {
 	const user = locals.user;
 	if (!user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
 	const { folderId } = params;
+	const targetUserId = url.searchParams.get('targetUserId');
 
 	try {
-		const { effectiveUserId } = await checkAccess(folderId, user);
+		const { effectiveUserId } = await checkAccess(folderId, user, targetUserId);
 		await deleteFolder(folderId, effectiveUserId);
 		return json({ success: true });
 	} catch (error: any) {
@@ -61,7 +69,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 	}
 };
 
-export const PATCH: RequestHandler = async ({ params, locals, request }) => {
+export const PATCH: RequestHandler = async ({ params, locals, request, url }) => {
 	const user = locals.user;
 	if (!user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
@@ -69,9 +77,10 @@ export const PATCH: RequestHandler = async ({ params, locals, request }) => {
 
 	const { folderId } = params;
 	const body = await request.json();
+	const targetUserId = url.searchParams.get('targetUserId');
 
 	try {
-		const { effectiveUserId } = await checkAccess(folderId, user);
+		const { effectiveUserId } = await checkAccess(folderId, user, targetUserId);
 
 		if (body.name !== undefined) {
 			const folder = await renameFolder(folderId, body.name, effectiveUserId);

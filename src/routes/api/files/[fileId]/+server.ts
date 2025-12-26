@@ -9,9 +9,20 @@ import {
 } from '$lib/server/storage/files';
 import { getUserRole, MAIN_STORAGE_OWNER_ID } from '$lib/server/roles';
 
-async function checkAccess(fileId: string, user: any, mode: 'read' | 'write' = 'read') {
+async function checkAccess(
+	fileId: string,
+	user: any,
+	mode: 'read' | 'write' = 'read',
+	targetUserId?: string | null
+) {
 	const file = await getFileMetadata(fileId);
 	const role = getUserRole(user);
+
+	if (role === 'admin' && targetUserId) {
+		if (file.ownerId === targetUserId) {
+			return { file, effectiveUserId: targetUserId };
+		}
+	}
 
 	if (file.ownerId === user.$id) return { file, effectiveUserId: user.$id };
 
@@ -29,9 +40,10 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 	}
 
 	const { fileId } = params;
+	const targetUserId = url.searchParams.get('targetUserId');
 
 	try {
-		const { file, effectiveUserId } = await checkAccess(fileId, user, 'read');
+		const { file, effectiveUserId } = await checkAccess(fileId, user, 'read', targetUserId);
 		const includeDownloadUrl = url.searchParams.get('download') === 'true';
 
 		if (includeDownloadUrl) {
@@ -48,16 +60,17 @@ export const GET: RequestHandler = async ({ params, locals, url }) => {
 	}
 };
 
-export const DELETE: RequestHandler = async ({ params, locals }) => {
+export const DELETE: RequestHandler = async ({ params, locals, url }) => {
 	const user = locals.user;
 	if (!user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
 	const { fileId } = params;
+	const targetUserId = url.searchParams.get('targetUserId');
 
 	try {
-		const { effectiveUserId } = await checkAccess(fileId, user, 'write');
+		const { effectiveUserId } = await checkAccess(fileId, user, 'write', targetUserId);
 		await deleteFile(fileId, effectiveUserId);
 		return json({ success: true });
 	} catch (error: any) {
@@ -68,7 +81,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 	}
 };
 
-export const PATCH: RequestHandler = async ({ params, locals, request }) => {
+export const PATCH: RequestHandler = async ({ params, locals, request, url }) => {
 	const user = locals.user;
 	if (!user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
@@ -76,9 +89,10 @@ export const PATCH: RequestHandler = async ({ params, locals, request }) => {
 
 	const { fileId } = params;
 	const body = await request.json();
+	const targetUserId = url.searchParams.get('targetUserId');
 
 	try {
-		const { effectiveUserId } = await checkAccess(fileId, user, 'write');
+		const { effectiveUserId } = await checkAccess(fileId, user, 'write', targetUserId);
 
 		if (body.name !== undefined) {
 			const file = await renameFile(fileId, body.name, effectiveUserId);

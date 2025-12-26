@@ -1,5 +1,6 @@
 import { createSessionClient, SESSION_COOKIE } from '$lib/server/appwrite';
 import { redirect, type Handle } from '@sveltejs/kit';
+import { getUserRole } from '$lib/server/roles';
 
 const PUBLIC_ROUTES = ['/login', '/register', '/auth/callback'];
 
@@ -29,6 +30,24 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 		if (event.locals.user && event.url.pathname === '/login') {
 			throw redirect(303, '/');
+		}
+
+		const isAdminRoute =
+			event.url.pathname.startsWith('/admin') ||
+			event.url.pathname.startsWith('/api/admin') ||
+			event.url.pathname.startsWith('/preview/');
+
+		if (isAdminRoute && event.locals.user) {
+			const role = getUserRole(event.locals.user);
+			if (role !== 'admin') {
+				if (event.url.pathname.startsWith('/api/')) {
+					return new Response(JSON.stringify({ error: 'Forbidden' }), {
+						status: 403,
+						headers: { 'Content-Type': 'application/json' }
+					});
+				}
+				throw redirect(303, '/');
+			}
 		}
 
 		return resolve(event);
