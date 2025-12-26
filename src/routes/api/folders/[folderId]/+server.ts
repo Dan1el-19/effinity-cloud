@@ -1,6 +1,26 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getFolder, deleteFolder, renameFolder, moveFolder } from '$lib/server/storage/folders';
+import {
+	getFolder,
+	deleteFolder,
+	renameFolder,
+	moveFolder,
+	getFolderMetadata
+} from '$lib/server/storage/folders';
+import { getUserRole, MAIN_STORAGE_OWNER_ID } from '$lib/server/roles';
+
+async function checkAccess(folderId: string, user: any) {
+	const folder = await getFolderMetadata(folderId);
+	const role = getUserRole(user);
+
+	if (folder.ownerId === user.$id) return { folder, effectiveUserId: user.$id };
+
+	if (folder.ownerId === MAIN_STORAGE_OWNER_ID && role !== 'basic') {
+		return { folder, effectiveUserId: MAIN_STORAGE_OWNER_ID };
+	}
+
+	throw new Error('Access denied');
+}
 
 export const GET: RequestHandler = async ({ params, locals }) => {
 	const user = locals.user;
@@ -11,7 +31,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	const { folderId } = params;
 
 	try {
-		const folder = await getFolder(folderId, user.$id);
+		const { folder } = await checkAccess(folderId, user);
 		return json(folder);
 	} catch (error: any) {
 		if (error.message.includes('Access denied')) {
@@ -30,7 +50,8 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 	const { folderId } = params;
 
 	try {
-		await deleteFolder(folderId, user.$id);
+		const { effectiveUserId } = await checkAccess(folderId, user);
+		await deleteFolder(folderId, effectiveUserId);
 		return json({ success: true });
 	} catch (error: any) {
 		if (error.message.includes('Access denied')) {
@@ -50,13 +71,15 @@ export const PATCH: RequestHandler = async ({ params, locals, request }) => {
 	const body = await request.json();
 
 	try {
+		const { effectiveUserId } = await checkAccess(folderId, user);
+
 		if (body.name !== undefined) {
-			const folder = await renameFolder(folderId, body.name, user.$id);
+			const folder = await renameFolder(folderId, body.name, effectiveUserId);
 			return json(folder);
 		}
 
 		if (body.parentFolderId !== undefined) {
-			const folder = await moveFolder(folderId, body.parentFolderId, user.$id);
+			const folder = await moveFolder(folderId, body.parentFolderId, effectiveUserId);
 			return json(folder);
 		}
 

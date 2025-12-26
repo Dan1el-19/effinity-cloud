@@ -22,6 +22,15 @@ export async function getFolder(folderId: string, userId: string) {
 	return folder;
 }
 
+export async function getFolderMetadata(folderId: string) {
+	const { tablesDB } = createAdminClient();
+	return await tablesDB.getRow({
+		databaseId: DATABASE_ID,
+		tableId: FOLDERS_TABLE,
+		rowId: folderId
+	});
+}
+
 export async function createFolder(userId: string, name: string, parentId: string | null = null) {
 	const { tablesDB } = createAdminClient();
 

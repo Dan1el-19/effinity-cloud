@@ -1,6 +1,6 @@
 import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT_ID } from '$env/static/public';
 import { APPWRITE_API_KEY } from '$env/static/private';
-import { Client, Account, TablesDB } from 'node-appwrite';
+import { Client, Account, TablesDB, Users } from 'node-appwrite';
 import { type RequestEvent } from '@sveltejs/kit';
 
 export const SESSION_COOKIE = 'a_session';
@@ -17,6 +17,9 @@ export function createAdminClient() {
 		},
 		get tablesDB() {
 			return new TablesDB(client);
+		},
+		get users() {
+			return new Users(client);
 		}
 	};
 }

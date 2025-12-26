@@ -1,6 +1,7 @@
 import { createAdminClient } from '$lib/server/appwrite';
 import { ID, Query } from 'node-appwrite';
 import { deleteR2Object, getDownloadUrl } from './r2';
+import { checkStorageQuota, MAIN_STORAGE_OWNER_ID } from '../roles';
 
 const DATABASE_ID = 'main';
 const FILES_TABLE = 'files';
@@ -31,8 +32,22 @@ export async function getFile(fileId: string, userId: string) {
 	return file;
 }
 
-export async function createFile(metadata: FileMetadata) {
+export async function getFileMetadata(fileId: string) {
 	const { tablesDB } = createAdminClient();
+	return await tablesDB.getRow({
+		databaseId: DATABASE_ID,
+		tableId: FILES_TABLE,
+		rowId: fileId
+	});
+}
+
+export async function createFile(metadata: FileMetadata) {
+	const { tablesDB, users } = createAdminClient();
+
+	if (metadata.ownerId !== MAIN_STORAGE_OWNER_ID) {
+		const user = await users.get(metadata.ownerId);
+		await checkStorageQuota(user, metadata.size);
+	}
 
 	if (metadata.parentFolderId) {
 		try {

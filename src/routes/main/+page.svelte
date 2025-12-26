@@ -4,7 +4,6 @@
 	import { LogOut } from 'lucide-svelte';
 	import FileExplorer from '$lib/components/files/FileExplorer.svelte';
 	import CreateFolder from '$lib/components/files/CreateFolder.svelte';
-	import StorageUsage from '$lib/components/files/StorageUsage.svelte';
 
 	let { data } = $props();
 	let uploadStatus = $state<'idle' | 'success' | 'error'>('idle');
@@ -66,24 +65,22 @@
 		<div>
 			<h1 class="text-3xl font-bold text-gray-800">Effinity Cloud</h1>
 			<p class="text-gray-500">
-				Virtual File System <span
-					class="ml-2 rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 uppercase"
-					>{data.role}</span
+				Shared Main Storage <span
+					class="ml-2 rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800 uppercase"
+					>Shared</span
 				>
 			</p>
 		</div>
 		<div class="flex gap-4">
-			{#if data.role !== 'basic'}
-				<a
-					href="/main"
-					class="flex items-center rounded-lg bg-indigo-50 px-4 py-2 font-medium text-indigo-600 transition hover:bg-indigo-100"
-				>
-					Main Storage
-				</a>
-			{/if}
+			<a
+				href="/"
+				class="flex items-center rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
+			>
+				&larr; My Storage
+			</a>
 			<button
 				onclick={() => (showCreateFolder = !showCreateFolder)}
-				class="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200"
+				class="rounded-lg bg-blue-50 px-4 py-2 font-medium text-blue-700 transition hover:bg-blue-100"
 			>
 				{showCreateFolder ? 'Cancel' : 'New Folder'}
 			</button>
@@ -106,8 +103,6 @@
 				onCancel={() => (showCreateFolder = false)}
 			/>
 		{/if}
-
-		<StorageUsage usage={data.usage} limit={data.limit} role={data.role} />
 
 		<h2 class="mb-4 text-xl font-semibold text-gray-700">Upload Files</h2>
 		<UppyUploader onUploadComplete={handleUploadComplete} onUploadError={handleUploadError} />
