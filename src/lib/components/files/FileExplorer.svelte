@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { Folder, FileText, Download, Pencil, Trash2 } from 'lucide-svelte';
+	import { Folder, FileText, Download, Pencil, Trash2, FolderDown } from 'lucide-svelte';
 	import { formatFileSize } from '$lib/utils/format';
 
 	let { files, folders } = $props();
+	let toastMessage = $state('');
+
+	function showToast(message: string) {
+		toastMessage = message;
+		setTimeout(() => (toastMessage = ''), 3000);
+	}
 
 	async function deleteFile(fileId: string, fileName: string) {
 		if (!confirm(`Delete "${fileName}"?`)) return;
@@ -21,17 +27,13 @@
 		}
 	}
 
-	async function downloadFile(fileId: string) {
+	async function downloadFile(fileId: string, fileName: string) {
 		try {
 			const res = await fetch(`/api/files/${fileId}?download=true`);
 			const data = await res.json();
 			if (data.downloadUrl) {
-				const a = document.createElement('a');
-				a.href = data.downloadUrl;
-				a.download = data.name || 'download';
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
+				showToast(`Pobieranie rozpoczęte: ${fileName}`);
+				window.location.href = data.downloadUrl;
 			}
 		} catch (e: any) {
 			alert(e.message);
@@ -95,6 +97,11 @@
 			alert(e.message);
 		}
 	}
+
+	function downloadFolder(folderId: string, folderName: string) {
+		showToast(`Pobieranie rozpoczęte: ${folderName}.zip`);
+		window.location.href = `/api/folders/${folderId}/download`;
+	}
 </script>
 
 {#if files.length === 0 && folders.length === 0}
@@ -139,6 +146,13 @@
 						>
 						<td class="px-6 py-4 text-right">
 							<button
+								onclick={() => downloadFolder(folder.$id, folder.name)}
+								class="mr-2 text-green-600 hover:text-green-800"
+								title="Download as ZIP"
+							>
+								<FolderDown class="inline h-4 w-4" />
+							</button>
+							<button
 								onclick={() => renameFolder(folder.$id, folder.name)}
 								class="mr-2 text-blue-600 hover:text-blue-800"
 								title="Rename"
@@ -170,7 +184,7 @@
 						</td>
 						<td class="px-6 py-4 text-right">
 							<button
-								onclick={() => downloadFile(file.$id)}
+								onclick={() => downloadFile(file.$id, file.name)}
 								class="mr-2 text-green-600 hover:text-green-800"
 								title="Download"
 							>
@@ -195,5 +209,13 @@
 				{/each}
 			</tbody>
 		</table>
+	</div>
+{/if}
+
+{#if toastMessage}
+	<div
+		class="fixed right-4 bottom-4 rounded-lg bg-gray-800 px-4 py-3 text-white shadow-lg transition-opacity"
+	>
+		{toastMessage}
 	</div>
 {/if}
