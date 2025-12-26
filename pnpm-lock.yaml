@@ -41,6 +41,9 @@ importers:
       node-appwrite:
         specifier: ^21.0.0
         version: 21.0.0
+      tiny-lru:
+        specifier: ^11.4.5
+        version: 11.4.5
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -3111,6 +3114,10 @@ packages:
 
   time-span@5.1.0:
     resolution: {integrity: sha512-75voc/9G4rDIJleOo4jPvN4/YC4GRZrY8yy1uU4lwrB3XEQbWve8zXoO5No4eFrGcTAMYyoY67p8jRQdtA1HbA==}
+    engines: {node: '>=12'}
+
+  tiny-lru@11.4.5:
+    resolution: {integrity: sha512-hkcz3FjNJfKXjV4mjQ1OrXSLAehg8Hw+cEZclOVT+5c/cWQWImQ9wolzTjth+dmmDe++p3bme3fTxz6Q4Etsqw==}
     engines: {node: '>=12'}
 
   tinybench@2.9.0:
@@ -6677,6 +6684,8 @@ snapshots:
   time-span@5.1.0:
     dependencies:
       convert-hrtime: 5.0.0
+
+  tiny-lru@11.4.5: {}
 
   tinybench@2.9.0: {}
 

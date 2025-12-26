@@ -1,6 +1,8 @@
 import type { Models } from 'node-appwrite';
 import { createAdminClient } from '$lib/server/appwrite';
 import { Query } from 'node-appwrite';
+import { getCached, setCache } from './cache';
+import { CacheKeys } from './cache/keys';
 
 export type UserRole = 'basic' | 'plus' | 'admin';
 
@@ -27,6 +29,10 @@ export function getUserStorageLimit(user: Models.User<Models.Preferences>): numb
 }
 
 export async function getUserStorageUsage(userId: string): Promise<number> {
+	const cacheKey = CacheKeys.storageUsage(userId);
+	const cached = getCached<number>(cacheKey);
+	if (cached !== undefined) return cached;
+
 	const { tablesDB } = createAdminClient();
 
 	let total = 0;
@@ -56,6 +62,7 @@ export async function getUserStorageUsage(userId: string): Promise<number> {
 		}
 	} while (cursor);
 
+	setCache(cacheKey, total);
 	return total;
 }
 

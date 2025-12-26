@@ -1,6 +1,8 @@
 import { createAdminClient } from '$lib/server/appwrite';
 import { ID, Query } from 'node-appwrite';
 import { deleteR2Object } from './r2';
+import { getCached, setCache, deleteCache, invalidateByPrefix } from '../cache';
+import { CacheKeys } from '../cache/keys';
 
 const DATABASE_ID = 'main';
 const FOLDERS_TABLE = 'folders';
@@ -23,12 +25,19 @@ export async function getFolder(folderId: string, userId: string) {
 }
 
 export async function getFolderMetadata(folderId: string) {
+	const cacheKey = CacheKeys.folderMetadata(folderId);
+	const cached = getCached<any>(cacheKey);
+	if (cached) return cached;
+
 	const { tablesDB } = createAdminClient();
-	return await tablesDB.getRow({
+	const folder = await tablesDB.getRow({
 		databaseId: DATABASE_ID,
 		tableId: FOLDERS_TABLE,
 		rowId: folderId
 	});
+
+	setCache(cacheKey, folder);
+	return folder;
 }
 
 export async function createFolder(userId: string, name: string, parentId: string | null = null) {
@@ -53,7 +62,7 @@ export async function createFolder(userId: string, name: string, parentId: strin
 		}
 	}
 
-	return await tablesDB.createRow({
+	const folder = await tablesDB.createRow({
 		databaseId: DATABASE_ID,
 		tableId: FOLDERS_TABLE,
 		rowId: ID.unique(),
@@ -64,9 +73,17 @@ export async function createFolder(userId: string, name: string, parentId: strin
 			path
 		}
 	});
+
+	invalidateByPrefix(CacheKeys.userFoldersPrefix(userId));
+
+	return folder;
 }
 
 export async function calculateFolderSize(folderId: string): Promise<number> {
+	const cacheKey = CacheKeys.folderSize(folderId);
+	const cached = getCached<number>(cacheKey);
+	if (cached !== undefined) return cached;
+
 	const { tablesDB } = createAdminClient();
 
 	const files = await tablesDB.listRows({
@@ -90,10 +107,15 @@ export async function calculateFolderSize(folderId: string): Promise<number> {
 		totalSize += await calculateFolderSize(subfolder.$id);
 	}
 
+	setCache(cacheKey, totalSize);
 	return totalSize;
 }
 
 export async function listFolders(userId: string, parentId: string | null = null) {
+	const cacheKey = CacheKeys.foldersList(userId, parentId);
+	const cached = getCached<any>(cacheKey);
+	if (cached) return cached;
+
 	const { tablesDB } = createAdminClient();
 	const queries = [Query.equal('ownerId', userId)];
 
@@ -117,7 +139,9 @@ export async function listFolders(userId: string, parentId: string | null = null
 		})
 	);
 
-	return { ...result, rows: foldersWithSize };
+	const finalResult = { ...result, rows: foldersWithSize };
+	setCache(cacheKey, finalResult);
+	return finalResult;
 }
 
 export async function renameFolder(folderId: string, newName: string, userId: string) {
@@ -133,12 +157,17 @@ export async function renameFolder(folderId: string, newName: string, userId: st
 		throw new Error('Access denied: Folder does not belong to user.');
 	}
 
-	return await tablesDB.updateRow({
+	const updated = await tablesDB.updateRow({
 		databaseId: DATABASE_ID,
 		tableId: FOLDERS_TABLE,
 		rowId: folderId,
 		data: { name: newName }
 	});
+
+	deleteCache(CacheKeys.folderMetadata(folderId));
+	invalidateByPrefix(CacheKeys.userFoldersPrefix(userId));
+
+	return updated;
 }
 
 export async function moveFolder(folderId: string, targetParentId: string | null, userId: string) {
@@ -177,7 +206,7 @@ export async function moveFolder(folderId: string, targetParentId: string | null
 		newPath = targetParent.path + targetParent.$id + '/';
 	}
 
-	return await tablesDB.updateRow({
+	const updated = await tablesDB.updateRow({
 		databaseId: DATABASE_ID,
 		tableId: FOLDERS_TABLE,
 		rowId: folderId,
@@ -186,6 +215,11 @@ export async function moveFolder(folderId: string, targetParentId: string | null
 			path: newPath
 		}
 	});
+
+	deleteCache(CacheKeys.folderMetadata(folderId));
+	invalidateByPrefix(CacheKeys.userFoldersPrefix(userId));
+
+	return updated;
 }
 
 export async function deleteFolder(folderId: string, userId: string) {
@@ -214,6 +248,7 @@ export async function deleteFolder(folderId: string, userId: string) {
 			tableId: FILES_TABLE,
 			rowId: file.$id
 		});
+		deleteCache(CacheKeys.fileMetadata(file.$id));
 	}
 
 	const subfolders = await tablesDB.listRows({
@@ -231,6 +266,12 @@ export async function deleteFolder(folderId: string, userId: string) {
 		tableId: FOLDERS_TABLE,
 		rowId: folderId
 	});
+
+	deleteCache(CacheKeys.folderMetadata(folderId));
+	deleteCache(CacheKeys.folderSize(folderId));
+	invalidateByPrefix(CacheKeys.userFoldersPrefix(userId));
+	invalidateByPrefix(CacheKeys.userFilesPrefix(userId));
+	deleteCache(CacheKeys.storageUsage(userId));
 
 	return folder;
 }
