@@ -1,3 +1,14 @@
+# [1.4.0](https://github.com/Dan1el-19/effinity-cloud/compare/v1.3.0...v1.4.0) (2025-12-26)
+
+
+### Features
+
+* Add server-side caching for user storage usage, file/folder metadata, lists, and R2 download URLs. ([b34bf3a](https://github.com/Dan1el-19/effinity-cloud/commit/b34bf3a6c261f2525c95a1d264f58bb2bd1579d8))
+* Implement comprehensive admin panel with user management, storage preview, and API endpoints for user administration. ([1159a23](https://github.com/Dan1el-19/effinity-cloud/commit/1159a23b0963100ae9f56b16273793e4735d7558))
+* Implement folder download as ZIP functionality with a new API endpoint and UI integration. ([1f2faff](https://github.com/Dan1el-19/effinity-cloud/commit/1f2faff7641bcee9fad6d03abdc269c4ebceb40c))
+* Implement Google OAuth login, add logout functionality, and enhance Uppy uploader configuration. ([ecec912](https://github.com/Dan1el-19/effinity-cloud/commit/ecec9129f4659501f5fd58b76e262f4c132fe241))
+* Implement storage quota, role-based access control for files and folders, and a new file explorer UI with storage usage display. ([5d5b6ae](https://github.com/Dan1el-19/effinity-cloud/commit/5d5b6ae1458a96a8d96d70459632623d752a8274))
+
 # [1.3.0](https://github.com/Dan1el-19/effinity-cloud/compare/v1.2.0...v1.3.0) (2025-12-25)
 
 ### Features
