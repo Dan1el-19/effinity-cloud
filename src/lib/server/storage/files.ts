@@ -54,7 +54,7 @@ export async function createFile(metadata: FileMetadata) {
 	const { tablesDB, users } = createAdminClient();
 
 	if (metadata.ownerId !== MAIN_STORAGE_OWNER_ID) {
-		const user = await users.get(metadata.ownerId);
+		const user = await users.get({ userId: metadata.ownerId });
 		await checkStorageQuota(user, metadata.size);
 	}
 

@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const { users } = createAdminClient();
 
 	try {
-		const user = await users.get(userId);
+		const user = await users.get({ userId });
 		const storageUsage = await getUserStorageUsage(userId);
 
 		let role: 'basic' | 'plus' | 'admin' = 'basic';

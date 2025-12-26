@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	const { users } = createAdminClient();
 
-	const usersList = await users.list([Query.limit(limit), Query.offset(offset)]);
+	const usersList = await users.list({ queries: [Query.limit(limit), Query.offset(offset)] });
 
 	const usersWithStorage = await Promise.all(
 		usersList.users.map(async (user) => {

@@ -12,7 +12,7 @@
 	}
 
 	async function deleteFile(fileId: string, fileName: string) {
-		if (!confirm(`Delete "${fileName}"?`)) return;
+		if (!confirm(`Usunąć "${fileName}"?`)) return;
 
 		try {
 			const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
@@ -32,7 +32,7 @@
 			const res = await fetch(`/api/files/${fileId}?download=true`);
 			const data = await res.json();
 			if (data.downloadUrl) {
-				showToast(`Pobieranie rozpoczęte: ${fileName}`);
+				showToast(`Pobieranie: ${fileName}`);
 				window.location.href = data.downloadUrl;
 			}
 		} catch (e: any) {
@@ -41,7 +41,7 @@
 	}
 
 	async function renameFile(fileId: string, currentName: string) {
-		const newName = prompt('New name:', currentName);
+		const newName = prompt('Nowa nazwa:', currentName);
 		if (!newName || newName === currentName) return;
 
 		try {
@@ -62,7 +62,7 @@
 	}
 
 	async function deleteFolder(folderId: string, folderName: string) {
-		if (!confirm(`Delete folder "${folderName}" and all its contents?`)) return;
+		if (!confirm(`Usunąć folder "${folderName}" i całą jego zawartość?`)) return;
 
 		try {
 			const res = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
@@ -78,7 +78,7 @@
 	}
 
 	async function renameFolder(folderId: string, currentName: string) {
-		const newName = prompt('New folder name:', currentName);
+		const newName = prompt('Nowa nazwa folderu:', currentName);
 		if (!newName || newName === currentName) return;
 
 		try {
@@ -99,70 +99,65 @@
 	}
 
 	function downloadFolder(folderId: string, folderName: string) {
-		showToast(`Pobieranie rozpoczęte: ${folderName}.zip`);
+		showToast(`Pobieranie: ${folderName}.zip`);
 		window.location.href = `/api/folders/${folderId}/download`;
 	}
 </script>
 
 {#if files.length === 0 && folders.length === 0}
-	<p class="text-gray-500 italic">This folder is empty.</p>
+	<div class="py-12 text-center">
+		<Folder class="mx-auto h-12 w-12 text-gray-300" />
+		<p class="mt-2 text-gray-500">Ten folder jest pusty</p>
+	</div>
 {:else}
-	<div class="overflow-x-auto rounded-lg border border-gray-100 bg-white shadow-sm">
-		<table class="min-w-full overflow-hidden">
-			<thead class="bg-gray-50">
+	<!-- Desktop: Table view -->
+	<div class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:block">
+		<table class="w-full">
+			<thead class="border-b border-gray-200 bg-gray-50">
 				<tr>
 					<th class="w-10 px-6 py-3"></th>
-					<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-						>Name</th
-					>
-					<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-						>Date</th
-					>
-					<th class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-						>Size</th
-					>
-					<th
-						class="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase"
-						>Actions</th
-					>
+					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nazwa</th>
+					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Data</th>
+					<th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Rozmiar</th>
+					<th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Akcje</th>
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-gray-100">
 				{#each folders as folder}
-					<tr class="group transition-colors hover:bg-gray-50">
+					<tr class="transition-colors hover:bg-gray-50">
 						<td class="px-6 py-4 text-amber-500">
 							<Folder class="h-5 w-5" />
 						</td>
-						<td class="px-6 py-4 text-sm font-medium text-gray-900">
-							<a href="?folder={folder.$id}" class="block w-full hover:text-blue-600">
+						<td class="px-6 py-4">
+							<a href="?folder={folder.$id}" class="font-medium text-gray-900 hover:text-blue-600">
 								{folder.name}
 							</a>
 						</td>
-						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500"
-							>{new Date(folder.$createdAt).toLocaleDateString()}</td
-						>
-						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500"
-							>{folder.size ? formatFileSize(folder.size) : '-'}</td
-						>
+						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+							{new Date(folder.$createdAt).toLocaleDateString('pl-PL')}
+						</td>
+						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+							{folder.size ? formatFileSize(folder.size) : '-'}
+						</td>
 						<td class="px-6 py-4 text-right">
 							<button
 								onclick={() => downloadFolder(folder.$id, folder.name)}
 								class="mr-2 text-green-600 hover:text-green-800"
-								title="Download as ZIP"
+								title="Pobierz ZIP"
 							>
 								<FolderDown class="inline h-4 w-4" />
 							</button>
 							<button
 								onclick={() => renameFolder(folder.$id, folder.name)}
 								class="mr-2 text-blue-600 hover:text-blue-800"
-								title="Rename"
+								title="Zmień nazwę"
 							>
 								<Pencil class="inline h-4 w-4" />
 							</button>
 							<button
 								onclick={() => deleteFolder(folder.$id, folder.name)}
 								class="text-red-600 hover:text-red-800"
-								title="Delete"
+								title="Usuń"
 							>
 								<Trash2 class="inline h-4 w-4" />
 							</button>
@@ -171,14 +166,14 @@
 				{/each}
 
 				{#each files as file}
-					<tr class="group transition-colors hover:bg-gray-50">
+					<tr class="transition-colors hover:bg-gray-50">
 						<td class="px-6 py-4 text-gray-400">
 							<FileText class="h-5 w-5" />
 						</td>
-						<td class="px-6 py-4 text-sm font-medium text-gray-900">{file.name}</td>
-						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500"
-							>{new Date(file.$createdAt).toLocaleString()}</td
-						>
+						<td class="px-6 py-4 font-medium text-gray-900">{file.name}</td>
+						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+							{new Date(file.$createdAt).toLocaleDateString('pl-PL')}
+						</td>
 						<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
 							{formatFileSize(file.size)}
 						</td>
@@ -186,21 +181,21 @@
 							<button
 								onclick={() => downloadFile(file.$id, file.name)}
 								class="mr-2 text-green-600 hover:text-green-800"
-								title="Download"
+								title="Pobierz"
 							>
 								<Download class="inline h-4 w-4" />
 							</button>
 							<button
 								onclick={() => renameFile(file.$id, file.name)}
 								class="mr-2 text-blue-600 hover:text-blue-800"
-								title="Rename"
+								title="Zmień nazwę"
 							>
 								<Pencil class="inline h-4 w-4" />
 							</button>
 							<button
 								onclick={() => deleteFile(file.$id, file.name)}
 								class="text-red-600 hover:text-red-800"
-								title="Delete"
+								title="Usuń"
 							>
 								<Trash2 class="inline h-4 w-4" />
 							</button>
@@ -210,12 +205,68 @@
 			</tbody>
 		</table>
 	</div>
+
+	<!-- Mobile: Card view -->
+	<div class="space-y-2 lg:hidden">
+		{#each folders as folder}
+			<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<div class="flex items-center justify-between">
+					<a href="?folder={folder.$id}" class="flex min-w-0 flex-1 items-center gap-3">
+						<Folder class="h-5 w-5 shrink-0 text-amber-500" />
+						<div class="min-w-0">
+							<p class="truncate font-medium text-gray-900">{folder.name}</p>
+							<p class="text-xs text-gray-500">
+								{folder.size ? formatFileSize(folder.size) : 'Folder'}
+							</p>
+						</div>
+					</a>
+					<div class="ml-2 flex items-center gap-1">
+						<button
+							onclick={() => downloadFolder(folder.$id, folder.name)}
+							class="p-2 text-green-600"
+						>
+							<FolderDown class="h-4 w-4" />
+						</button>
+						<button onclick={() => renameFolder(folder.$id, folder.name)} class="p-2 text-blue-600">
+							<Pencil class="h-4 w-4" />
+						</button>
+						<button onclick={() => deleteFolder(folder.$id, folder.name)} class="p-2 text-red-600">
+							<Trash2 class="h-4 w-4" />
+						</button>
+					</div>
+				</div>
+			</div>
+		{/each}
+
+		{#each files as file}
+			<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<div class="flex items-center justify-between">
+					<div class="flex min-w-0 flex-1 items-center gap-3">
+						<FileText class="h-5 w-5 shrink-0 text-gray-400" />
+						<div class="min-w-0">
+							<p class="truncate font-medium text-gray-900">{file.name}</p>
+							<p class="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+						</div>
+					</div>
+					<div class="ml-2 flex items-center gap-1">
+						<button onclick={() => downloadFile(file.$id, file.name)} class="p-2 text-green-600">
+							<Download class="h-4 w-4" />
+						</button>
+						<button onclick={() => renameFile(file.$id, file.name)} class="p-2 text-blue-600">
+							<Pencil class="h-4 w-4" />
+						</button>
+						<button onclick={() => deleteFile(file.$id, file.name)} class="p-2 text-red-600">
+							<Trash2 class="h-4 w-4" />
+						</button>
+					</div>
+				</div>
+			</div>
+		{/each}
+	</div>
 {/if}
 
 {#if toastMessage}
-	<div
-		class="fixed right-4 bottom-4 rounded-lg bg-gray-800 px-4 py-3 text-white shadow-lg transition-opacity"
-	>
+	<div class="fixed right-4 bottom-4 rounded-lg bg-gray-800 px-4 py-3 text-white shadow-lg">
 		{toastMessage}
 	</div>
 {/if}

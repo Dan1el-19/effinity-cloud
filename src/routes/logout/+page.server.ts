@@ -8,8 +8,7 @@ export const actions: Actions = {
 
 		try {
 			await account.deleteSession({ sessionId: 'current' });
-		} catch {
-		}
+		} catch {}
 
 		event.cookies.delete(SESSION_COOKIE, { path: '/' });
 

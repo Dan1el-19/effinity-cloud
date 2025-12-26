@@ -18,7 +18,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	const { users } = createAdminClient();
 
 	try {
-		const user = await users.get(userId);
+		const user = await users.get({ userId });
 		const currentLabels = user.labels.filter(
 			(l: string) => !['basic', 'plus', 'admin'].includes(l)
 		);
@@ -27,7 +27,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			currentLabels.push(role);
 		}
 
-		await users.updateLabels(userId, currentLabels);
+		await users.updateLabels({ userId, labels: currentLabels });
 
 		return json({ success: true });
 	} catch (e: any) {

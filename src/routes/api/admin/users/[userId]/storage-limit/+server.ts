@@ -16,7 +16,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	const { users } = createAdminClient();
 
 	try {
-		const user = await users.get(userId);
+		const user = await users.get({ userId });
 		const currentPrefs = (user.prefs as Record<string, any>) || {};
 
 		if (limit === null || limit === undefined) {
@@ -25,7 +25,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			currentPrefs.storageLimit = limit;
 		}
 
-		await users.updatePrefs(userId, currentPrefs);
+		await users.updatePrefs({ userId, prefs: currentPrefs });
 
 		deleteCache(CacheKeys.storageUsage(userId));
 

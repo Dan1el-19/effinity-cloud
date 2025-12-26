@@ -16,7 +16,7 @@ export async function getAdminStats(): Promise<AdminStats> {
 
 	const { users, tablesDB } = createAdminClient();
 
-	const usersList = await users.list([Query.limit(5000)]);
+	const usersList = await users.list({ queries: [Query.limit(5000)] });
 
 	let basic = 0;
 	let plus = 0;

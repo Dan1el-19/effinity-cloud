@@ -96,7 +96,7 @@
 				target: dashboardContainer,
 				hideProgressDetails: false,
 				proudlyDisplayPoweredByUppy: false,
-				height: 400,
+				height: 320,
 				theme: 'auto'
 			})
 			.use(GoldenRetriever, {

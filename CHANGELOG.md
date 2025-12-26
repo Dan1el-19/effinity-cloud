@@ -1,12 +1,11 @@
 # [1.3.0](https://github.com/Dan1el-19/effinity-cloud/compare/v1.2.0...v1.3.0) (2025-12-25)
 
-
 ### Features
 
-* Add comprehensive file and folder management with R2 storage, including API and UI for CRUD operations. ([2d28f99](https://github.com/Dan1el-19/effinity-cloud/commit/2d28f99932216df6f18eb40a766fbad57e3c7af8))
-* Add recursive folder size calculation and display, and enhance Uppy uploads with dynamic multipart chunk sizing. ([b94f5e3](https://github.com/Dan1el-19/effinity-cloud/commit/b94f5e309268bece7605653fbbb28b179646d753))
-* dynamically set session cookie secure flag, relax SameSite policy to lax, and enable host access for dev server. ([1fedac1](https://github.com/Dan1el-19/effinity-cloud/commit/1fedac1136e7925f6c9b28a06330b56af28af9c4))
-* implement file and folder management with database schema, server-side APIs, and enhanced Uppy integration. ([4d02942](https://github.com/Dan1el-19/effinity-cloud/commit/4d029420970aa27dc7fcbd4c2a2e892145f32f5d))
+- Add comprehensive file and folder management with R2 storage, including API and UI for CRUD operations. ([2d28f99](https://github.com/Dan1el-19/effinity-cloud/commit/2d28f99932216df6f18eb40a766fbad57e3c7af8))
+- Add recursive folder size calculation and display, and enhance Uppy uploads with dynamic multipart chunk sizing. ([b94f5e3](https://github.com/Dan1el-19/effinity-cloud/commit/b94f5e309268bece7605653fbbb28b179646d753))
+- dynamically set session cookie secure flag, relax SameSite policy to lax, and enable host access for dev server. ([1fedac1](https://github.com/Dan1el-19/effinity-cloud/commit/1fedac1136e7925f6c9b28a06330b56af28af9c4))
+- implement file and folder management with database schema, server-side APIs, and enhanced Uppy integration. ([4d02942](https://github.com/Dan1el-19/effinity-cloud/commit/4d029420970aa27dc7fcbd4c2a2e892145f32f5d))
 
 # [1.2.0](https://github.com/Dan1el-19/effinity-cloud/compare/v1.1.0...v1.2.0) (2025-12-24)
 

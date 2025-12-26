@@ -18,7 +18,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	const { users } = createAdminClient();
 
 	try {
-		await users.updatePassword(userId, password);
+		await users.updatePassword({ userId, password });
 		return json({ success: true });
 	} catch (e: any) {
 		throw error(500, e.message);

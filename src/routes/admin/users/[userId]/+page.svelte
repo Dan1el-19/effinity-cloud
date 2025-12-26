@@ -14,13 +14,24 @@
 
 	let { data } = $props();
 
-	let selectedRole = $state(data.targetUser.role as 'basic' | 'plus' | 'admin');
-	let customLimit = $state(
+	const initialRole = $derived(data.targetUser.role as 'basic' | 'plus' | 'admin');
+	const initialLimit = $derived(
 		data.targetUser.customLimit ? (data.targetUser.customLimit / 1024 / 1024 / 1024).toString() : ''
 	);
+
+	let selectedRole = $state<'basic' | 'plus' | 'admin'>('basic');
+	let customLimit = $state('');
 	let newPassword = $state('');
 	let saving = $state(false);
 	let message = $state('');
+
+	$effect(() => {
+		selectedRole = initialRole;
+	});
+
+	$effect(() => {
+		customLimit = initialLimit;
+	});
 
 	function generatePassword() {
 		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';

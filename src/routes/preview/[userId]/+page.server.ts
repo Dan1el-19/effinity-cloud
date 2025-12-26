@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const { users } = createAdminClient();
 
 	try {
-		const targetUser = await users.get(userId);
+		const targetUser = await users.get({ userId });
 
 		const filesResult = await listFiles(userId, folderId);
 		const foldersResult = await listFolders(userId, folderId);
