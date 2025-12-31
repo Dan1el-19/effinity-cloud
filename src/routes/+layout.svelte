@@ -27,9 +27,22 @@
 		currentPath;
 		isDrawerOpen = false;
 	});
+	let pageTitle = $derived.by(() => {
+		const path = currentPath;
+		const navItem = allNavItems.find((item) => item.href === path);
+		if (navItem) return `${navItem.label} | Effinity Cloud`;
+		if (path.startsWith('/login')) return 'Login | Effinity Cloud';
+		if (path.startsWith('/admin/users')) {
+			if (path.split('/').length > 3) return 'User Details | Effinity Cloud';
+			return 'Users | Effinity Cloud';
+		}
+		if (path.startsWith('/preview')) return 'Preview | Effinity Cloud';
+		return 'Effinity Cloud';
+	});
 </script>
 
 <svelte:head>
+	<title>{pageTitle}</title>
 	<link rel="icon" href={favicon} />
 	<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 	<meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)" />
