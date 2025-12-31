@@ -1,15 +1,16 @@
 import { createAdminClient } from '$lib/server/appwrite';
-import { ID, Query } from 'node-appwrite';
+import { ID, Query, type Models } from 'node-appwrite';
 import { deleteR2Object } from './r2';
 import { getCached, setCache, deleteCache, invalidateByPrefix } from '../cache';
 import { CacheKeys } from '../cache/keys';
 import { DATABASE } from '$lib/constants';
+import type { FolderDocument, ListResult, FolderWithSize } from '$lib/types/storage';
 
 const DATABASE_ID = DATABASE.ID;
 const FOLDERS_TABLE = DATABASE.TABLES.FOLDERS;
 const FILES_TABLE = DATABASE.TABLES.FILES;
 
-export async function getFolder(folderId: string, userId: string) {
+export async function getFolder(folderId: string, userId: string): Promise<FolderDocument> {
 	const { tablesDB } = createAdminClient();
 
 	const folder = await tablesDB.getRow({
@@ -22,12 +23,12 @@ export async function getFolder(folderId: string, userId: string) {
 		throw new Error('Access denied: Folder does not belong to user.');
 	}
 
-	return folder;
+	return folder as unknown as FolderDocument;
 }
 
-export async function getFolderMetadata(folderId: string) {
+export async function getFolderMetadata(folderId: string): Promise<FolderDocument> {
 	const cacheKey = CacheKeys.folderMetadata(folderId);
-	const cached = getCached<any>(cacheKey);
+	const cached = getCached<FolderDocument>(cacheKey);
 	if (cached) return cached;
 
 	const { tablesDB } = createAdminClient();
@@ -37,8 +38,9 @@ export async function getFolderMetadata(folderId: string) {
 		rowId: folderId
 	});
 
-	setCache(cacheKey, folder);
-	return folder;
+	const typedFolder = folder as unknown as FolderDocument;
+	setCache(cacheKey, typedFolder);
+	return typedFolder;
 }
 
 export async function createFolder(userId: string, name: string, parentId: string | null = null) {
@@ -77,7 +79,7 @@ export async function createFolder(userId: string, name: string, parentId: strin
 
 	invalidateByPrefix(CacheKeys.userFoldersPrefix(userId));
 
-	return folder;
+	return folder as unknown as FolderDocument;
 }
 
 export async function calculateFolderSize(folderId: string): Promise<number> {
@@ -112,9 +114,12 @@ export async function calculateFolderSize(folderId: string): Promise<number> {
 	return totalSize;
 }
 
-export async function listFolders(userId: string, parentId: string | null = null) {
+export async function listFolders(
+	userId: string,
+	parentId: string | null = null
+): Promise<ListResult<FolderWithSize>> {
 	const cacheKey = CacheKeys.foldersList(userId, parentId);
-	const cached = getCached<any>(cacheKey);
+	const cached = getCached<ListResult<FolderWithSize>>(cacheKey);
 	if (cached) return cached;
 
 	const { tablesDB } = createAdminClient();
@@ -136,16 +141,23 @@ export async function listFolders(userId: string, parentId: string | null = null
 	const foldersWithSize = await Promise.all(
 		result.rows.map(async (folder) => {
 			const size = await calculateFolderSize(folder.$id);
-			return { ...folder, size } as typeof folder & { size: number };
+			return { ...folder, size } as unknown as FolderWithSize;
 		})
 	);
 
-	const finalResult = { ...result, rows: foldersWithSize };
+	const finalResult = {
+		total: result.total,
+		rows: foldersWithSize
+	};
 	setCache(cacheKey, finalResult);
 	return finalResult;
 }
 
-export async function renameFolder(folderId: string, newName: string, userId: string) {
+export async function renameFolder(
+	folderId: string,
+	newName: string,
+	userId: string
+): Promise<Models.Row> {
 	const { tablesDB } = createAdminClient();
 
 	const folder = await tablesDB.getRow({
@@ -171,7 +183,11 @@ export async function renameFolder(folderId: string, newName: string, userId: st
 	return updated;
 }
 
-export async function moveFolder(folderId: string, targetParentId: string | null, userId: string) {
+export async function moveFolder(
+	folderId: string,
+	targetParentId: string | null,
+	userId: string
+): Promise<Models.Row> {
 	const { tablesDB } = createAdminClient();
 
 	const folder = await tablesDB.getRow({
@@ -223,7 +239,7 @@ export async function moveFolder(folderId: string, targetParentId: string | null
 	return updated;
 }
 
-export async function deleteFolder(folderId: string, userId: string) {
+export async function deleteFolder(folderId: string, userId: string): Promise<FolderDocument> {
 	const { tablesDB } = createAdminClient();
 
 	const folder = await tablesDB.getRow({
@@ -279,5 +295,5 @@ export async function deleteFolder(folderId: string, userId: string) {
 	invalidateByPrefix(CacheKeys.userFilesPrefix(userId));
 	deleteCache(CacheKeys.storageUsage(userId));
 
-	return folder;
+	return folder as unknown as FolderDocument;
 }

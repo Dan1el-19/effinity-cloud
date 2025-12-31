@@ -8,6 +8,7 @@ import {
 	getFileDownloadUrl
 } from '$lib/server/storage/files';
 import { getUserRole, MAIN_STORAGE_OWNER_ID } from '$lib/server/roles';
+import { updateFileSchema } from '$lib/schemas';
 
 async function checkAccess(
 	fileId: string,
@@ -91,16 +92,23 @@ export const PATCH: RequestHandler = async ({ params, locals, request, url }) =>
 	const body = await request.json();
 	const targetUserId = url.searchParams.get('targetUserId');
 
+	const validated = updateFileSchema.safeParse(body);
+	if (!validated.success) {
+		return json({ error: 'Validation error', details: validated.error.issues }, { status: 400 });
+	}
+
+	const { name, parentFolderId } = validated.data;
+
 	try {
 		const { effectiveUserId } = await checkAccess(fileId, user, 'write', targetUserId);
 
-		if (body.name !== undefined) {
-			const file = await renameFile(fileId, body.name, effectiveUserId);
+		if (name !== undefined) {
+			const file = await renameFile(fileId, name, effectiveUserId);
 			return json(file);
 		}
 
-		if (body.parentFolderId !== undefined) {
-			const file = await moveFile(fileId, body.parentFolderId, effectiveUserId);
+		if (parentFolderId !== undefined) {
+			const file = await moveFile(fileId, parentFolderId, effectiveUserId);
 			return json(file);
 		}
 

@@ -1,7 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { createAdminClient } from '$lib/server/appwrite';
-import { getUserStorageUsage, getUserStorageLimit } from '$lib/server/roles';
+import { getUserStorageUsage, getUserStorageLimit, type UserPreferences } from '$lib/server/roles';
 import { error } from '@sveltejs/kit';
+import type { Models } from 'node-appwrite';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { userId } = params;
@@ -9,7 +10,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const { users } = createAdminClient();
 
 	try {
-		const user = await users.get({ userId });
+		const user = (await users.get({ userId })) as Models.User<UserPreferences>;
 		const storageUsage = await getUserStorageUsage(userId);
 
 		let role: 'basic' | 'plus' | 'admin' = 'basic';
@@ -27,7 +28,7 @@ export const load: PageServerLoad = async ({ params }) => {
 				role,
 				storageUsage,
 				storageLimit,
-				customLimit: (user.prefs as any)?.storageLimit
+				customLimit: user.prefs.storageLimit
 			}
 		};
 	} catch (e) {

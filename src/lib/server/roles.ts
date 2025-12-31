@@ -7,6 +7,10 @@ import { STORAGE } from '$lib/constants';
 
 export type UserRole = 'basic' | 'plus' | 'admin';
 
+export interface UserPreferences extends Models.Preferences {
+	storageLimit?: number;
+}
+
 export const STORAGE_LIMITS = {
 	basic: STORAGE.LIMITS.BASIC,
 	plus: STORAGE.LIMITS.PLUS,
@@ -15,15 +19,15 @@ export const STORAGE_LIMITS = {
 
 export const MAIN_STORAGE_OWNER_ID = 'main-storage';
 
-export function getUserRole(user: Models.User<Models.Preferences>): UserRole {
+export function getUserRole(user: Models.User<UserPreferences>): UserRole {
 	if (user.labels.includes('admin')) return 'admin';
 	if (user.labels.includes('plus')) return 'plus';
 	return 'basic';
 }
 
-export function getUserStorageLimit(user: Models.User<Models.Preferences>): number {
-	if (user.prefs && typeof (user.prefs as any).storageLimit === 'number') {
-		return (user.prefs as any).storageLimit;
+export function getUserStorageLimit(user: Models.User<UserPreferences>): number {
+	if (user.prefs && typeof user.prefs.storageLimit === 'number') {
+		return user.prefs.storageLimit;
 	}
 	const role = getUserRole(user);
 	return STORAGE_LIMITS[role];

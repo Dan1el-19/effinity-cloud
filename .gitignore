@@ -26,7 +26,4 @@ vite.config.ts.timestamp-*
 # Scripts
 scripts/setup-cors.ts
 
-# UI UX
-UI_UX.md
-review.md
 

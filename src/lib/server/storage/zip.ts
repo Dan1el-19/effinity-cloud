@@ -7,6 +7,7 @@ import { createAdminClient } from '$lib/server/appwrite';
 import { Query } from 'node-appwrite';
 import { getFolder, calculateFolderSize } from './folders';
 import { DATABASE, STORAGE } from '$lib/constants';
+import type { FolderDocument, FileDocument } from '$lib/types/storage';
 
 const DATABASE_ID = DATABASE.ID;
 const FILES_TABLE = DATABASE.TABLES.FILES;
@@ -29,11 +30,12 @@ async function collectFolderFiles(folderId: string, basePath: string = ''): Prom
 		queries: [Query.equal('parentFolderId', folderId)]
 	});
 
-	for (const file of folderFiles.rows) {
+	for (const row of folderFiles.rows) {
+		const file = row as unknown as FileDocument;
 		files.push({
-			r2Key: file.r2Key as string,
-			name: file.name as string,
-			relativePath: basePath ? `${basePath}/${file.name}` : (file.name as string)
+			r2Key: file.r2Key,
+			name: file.name,
+			relativePath: basePath ? `${basePath}/${file.name}` : file.name
 		});
 	}
 
@@ -43,8 +45,9 @@ async function collectFolderFiles(folderId: string, basePath: string = ''): Prom
 		queries: [Query.equal('parentFolderId', folderId)]
 	});
 
-	for (const subfolder of subfolders.rows) {
-		const subPath = basePath ? `${basePath}/${subfolder.name}` : (subfolder.name as string);
+	for (const row of subfolders.rows) {
+		const subfolder = row as unknown as FolderDocument;
+		const subPath = basePath ? `${basePath}/${subfolder.name}` : subfolder.name;
 		const subFiles = await collectFolderFiles(subfolder.$id, subPath);
 		files.push(...subFiles);
 	}
@@ -65,7 +68,7 @@ export async function streamFolderAsZip(
 		);
 	}
 
-	const files = await collectFolderFiles(folderId, folder.name as string);
+	const files = await collectFolderFiles(folderId, folder.name);
 
 	if (files.length === 0) {
 		throw new Error('Folder is empty');
@@ -103,5 +106,5 @@ export async function streamFolderAsZip(
 		}
 	})();
 
-	return { stream: passThrough, folderName: folder.name as string };
+	return { stream: passThrough, folderName: folder.name };
 }

@@ -8,6 +8,7 @@ import {
 	getFolderMetadata
 } from '$lib/server/storage/folders';
 import { getUserRole, MAIN_STORAGE_OWNER_ID } from '$lib/server/roles';
+import { updateFolderSchema } from '$lib/schemas';
 
 async function checkAccess(folderId: string, user: any, targetUserId?: string | null) {
 	const folder = await getFolderMetadata(folderId);
@@ -79,16 +80,23 @@ export const PATCH: RequestHandler = async ({ params, locals, request, url }) =>
 	const body = await request.json();
 	const targetUserId = url.searchParams.get('targetUserId');
 
+	const validated = updateFolderSchema.safeParse(body);
+	if (!validated.success) {
+		return json({ error: 'Validation error', details: validated.error.issues }, { status: 400 });
+	}
+
+	const { name, parentFolderId } = validated.data;
+
 	try {
 		const { effectiveUserId } = await checkAccess(folderId, user, targetUserId);
 
-		if (body.name !== undefined) {
-			const folder = await renameFolder(folderId, body.name, effectiveUserId);
+		if (name !== undefined) {
+			const folder = await renameFolder(folderId, name, effectiveUserId);
 			return json(folder);
 		}
 
-		if (body.parentFolderId !== undefined) {
-			const folder = await moveFolder(folderId, body.parentFolderId, effectiveUserId);
+		if (parentFolderId !== undefined) {
+			const folder = await moveFolder(folderId, parentFolderId, effectiveUserId);
 			return json(folder);
 		}
 

@@ -1,4 +1,4 @@
-import { Client, Databases, Permission, Role } from 'node-appwrite';
+import { Client, TablesDB, IndexType } from 'node-appwrite';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -32,19 +32,23 @@ if (!ENDPOINT || !PROJECT_ID || !API_KEY) {
 
 const client = new Client().setEndpoint(ENDPOINT).setProject(PROJECT_ID).setKey(API_KEY);
 
-const databases = new Databases(client);
+const tablesDB = new TablesDB(client);
 
 async function createCollections() {
 	console.log(`Initializing Database (${DATABASE_ID})...`);
 
-	// 0. Ensure Database Exists
 	try {
-		await databases.get(DATABASE_ID);
-		console.log(`Database '${DATABASE_ID}' exists.`);
+		const dbList = await tablesDB.list({ queries: [], search: DATABASE_ID });
+		const dbExists = dbList.databases.some((db) => db.$id === DATABASE_ID);
+		if (dbExists) {
+			console.log(`Database '${DATABASE_ID}' exists.`);
+		} else {
+			throw { code: 404 };
+		}
 	} catch (e: any) {
 		if (e.code === 404) {
 			console.log(`Database '${DATABASE_ID}' not found. Creating...`);
-			await databases.create(DATABASE_ID, 'main', true); // enabled
+			await tablesDB.create({ databaseId: DATABASE_ID, name: 'main', enabled: true });
 		} else {
 			console.error('Error fetching database:', e.message);
 			process.exit(1);
@@ -52,10 +56,13 @@ async function createCollections() {
 	}
 
 	try {
-		// 1. Create 'folders' collection
 		console.log("Creating 'folders' collection...");
 		try {
-			await databases.createCollection(DATABASE_ID, 'folders', 'Folders', []);
+			await tablesDB.createTable({
+				databaseId: DATABASE_ID,
+				tableId: 'folders',
+				name: 'Folders'
+			});
 			console.log("Created 'folders' collection.");
 		} catch (e: any) {
 			if (e.code === 409) console.log("'folders' collection already exists.");
@@ -65,33 +72,33 @@ async function createCollections() {
 		console.log("Creating attributes for 'folders'...");
 		const folderAttrs = [
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'folders',
+					tableId: 'folders',
 					key: 'name',
 					size: 255,
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'folders',
+					tableId: 'folders',
 					key: 'parentFolderId',
 					size: 36,
 					required: false
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'folders',
+					tableId: 'folders',
 					key: 'ownerId',
 					size: 36,
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'folders',
+					tableId: 'folders',
 					key: 'path',
 					size: 4096,
 					required: true
@@ -99,10 +106,13 @@ async function createCollections() {
 		];
 		await runAttributes(folderAttrs);
 
-		// 2. Create 'files' collection
 		console.log("Creating 'files' collection...");
 		try {
-			await databases.createCollection(DATABASE_ID, 'files', 'Files', []);
+			await tablesDB.createTable({
+				databaseId: DATABASE_ID,
+				tableId: 'files',
+				name: 'Files'
+			});
 			console.log("Created 'files' collection.");
 		} catch (e: any) {
 			if (e.code === 409) console.log("'files' collection already exists.");
@@ -112,62 +122,65 @@ async function createCollections() {
 		console.log("Creating attributes for 'files'...");
 		const fileAttrs = [
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'name',
 					size: 255,
 					required: true
 				}),
 			() =>
-				databases.createIntegerAttribute({
+				tablesDB.createIntegerColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'size',
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'mimeType',
 					size: 127,
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'r2Key',
 					size: 1024,
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'bucketId',
 					size: 255,
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'ownerId',
 					size: 36,
 					required: true
 				}),
 			() =>
-				databases.createStringAttribute({
+				tablesDB.createStringColumn({
 					databaseId: DATABASE_ID,
-					collectionId: 'files',
+					tableId: 'files',
 					key: 'parentFolderId',
 					size: 36,
 					required: false
 				})
 		];
 		await runAttributes(fileAttrs);
+
+		console.log('Creating indexes...');
+		await createIndexes();
 
 		console.log('✅ Database Schema initialized successfully.');
 	} catch (err: any) {
@@ -183,6 +196,37 @@ async function runAttributes(attrFunctions: Array<() => Promise<any>>) {
 		} catch (e: any) {
 			if (e.code !== 409) {
 				console.error('  Error creating attribute:', e.message);
+			}
+		}
+	}
+}
+
+async function createIndexes() {
+	const indexes = [
+		{ tableId: 'files', key: 'files_ownerId_idx', columns: ['ownerId'] },
+		{ tableId: 'files', key: 'files_parentFolderId_idx', columns: ['parentFolderId'] },
+		{ tableId: 'files', key: 'files_owner_parent_idx', columns: ['ownerId', 'parentFolderId'] },
+		{ tableId: 'folders', key: 'folders_ownerId_idx', columns: ['ownerId'] },
+		{ tableId: 'folders', key: 'folders_parentFolderId_idx', columns: ['parentFolderId'] },
+		{ tableId: 'folders', key: 'folders_owner_parent_idx', columns: ['ownerId', 'parentFolderId'] }
+	];
+
+	for (const idx of indexes) {
+		try {
+			await tablesDB.createIndex({
+				databaseId: DATABASE_ID,
+				tableId: idx.tableId,
+				key: idx.key,
+				type: IndexType.Key,
+				columns: idx.columns
+			});
+			console.log(`  Created index: ${idx.key}`);
+			await new Promise((r) => setTimeout(r, 500));
+		} catch (e: any) {
+			if (e.code === 409) {
+				console.log(`  Index ${idx.key} already exists.`);
+			} else {
+				console.error(`  Error creating index ${idx.key}:`, e.message);
 			}
 		}
 	}

@@ -1,25 +1,21 @@
 import { createAdminClient } from '$lib/server/appwrite';
-import { ID, Query } from 'node-appwrite';
+import { ID, Query, type Models } from 'node-appwrite';
 import { deleteR2Object, getDownloadUrl } from './r2';
 import { checkStorageQuota, MAIN_STORAGE_OWNER_ID } from '../roles';
 import { getCached, setCache, deleteCache, invalidateByPrefix } from '../cache';
 import { CacheKeys } from '../cache/keys';
 import { DATABASE } from '$lib/constants';
+import type {
+	FileDocument,
+	FileMetadata,
+	ListResult,
+	FileDownloadResult
+} from '$lib/types/storage';
 
 const DATABASE_ID = DATABASE.ID;
 const FILES_TABLE = DATABASE.TABLES.FILES;
 
-interface FileMetadata {
-	name: string;
-	size: number;
-	mimeType: string;
-	r2Key: string;
-	bucketId: string;
-	ownerId: string;
-	parentFolderId?: string | null;
-}
-
-export async function getFile(fileId: string, userId: string) {
+export async function getFile(fileId: string, userId: string): Promise<FileDocument> {
 	const { tablesDB } = createAdminClient();
 
 	const file = await tablesDB.getRow({
@@ -32,12 +28,12 @@ export async function getFile(fileId: string, userId: string) {
 		throw new Error('Access denied: File does not belong to user.');
 	}
 
-	return file;
+	return file as unknown as FileDocument;
 }
 
-export async function getFileMetadata(fileId: string) {
+export async function getFileMetadata(fileId: string): Promise<FileDocument> {
 	const cacheKey = CacheKeys.fileMetadata(fileId);
-	const cached = getCached<any>(cacheKey);
+	const cached = getCached<FileDocument>(cacheKey);
 	if (cached) return cached;
 
 	const { tablesDB } = createAdminClient();
@@ -47,11 +43,12 @@ export async function getFileMetadata(fileId: string) {
 		rowId: fileId
 	});
 
-	setCache(cacheKey, file);
-	return file;
+	const typedFile = file as unknown as FileDocument;
+	setCache(cacheKey, typedFile);
+	return typedFile;
 }
 
-export async function createFile(metadata: FileMetadata) {
+export async function createFile(metadata: FileMetadata): Promise<FileDocument> {
 	const { tablesDB, users } = createAdminClient();
 
 	if (metadata.ownerId !== MAIN_STORAGE_OWNER_ID) {
@@ -87,12 +84,15 @@ export async function createFile(metadata: FileMetadata) {
 		deleteCache(CacheKeys.folderSize(metadata.parentFolderId));
 	}
 
-	return file;
+	return file as unknown as FileDocument;
 }
 
-export async function listFiles(userId: string, folderId: string | null = null) {
+export async function listFiles(
+	userId: string,
+	folderId: string | null = null
+): Promise<ListResult<FileDocument>> {
 	const cacheKey = CacheKeys.filesList(userId, folderId);
-	const cached = getCached<any>(cacheKey);
+	const cached = getCached<ListResult<FileDocument>>(cacheKey);
 	if (cached) return cached;
 
 	const { tablesDB } = createAdminClient();
@@ -112,11 +112,20 @@ export async function listFiles(userId: string, folderId: string | null = null) 
 		queries
 	});
 
-	setCache(cacheKey, result);
-	return result;
+	const typedResult = {
+		total: result.total,
+		rows: result.rows as unknown as FileDocument[]
+	};
+
+	setCache(cacheKey, typedResult);
+	return typedResult;
 }
 
-export async function renameFile(fileId: string, newName: string, userId: string) {
+export async function renameFile(
+	fileId: string,
+	newName: string,
+	userId: string
+): Promise<Models.Row> {
 	const { tablesDB } = createAdminClient();
 
 	const file = await tablesDB.getRow({
@@ -142,7 +151,11 @@ export async function renameFile(fileId: string, newName: string, userId: string
 	return updated;
 }
 
-export async function moveFile(fileId: string, targetFolderId: string | null, userId: string) {
+export async function moveFile(
+	fileId: string,
+	targetFolderId: string | null,
+	userId: string
+): Promise<Models.Row> {
 	const { tablesDB } = createAdminClient();
 
 	const file = await tablesDB.getRow({
@@ -186,7 +199,7 @@ export async function moveFile(fileId: string, targetFolderId: string | null, us
 	return updated;
 }
 
-export async function deleteFile(fileId: string, userId: string) {
+export async function deleteFile(fileId: string, userId: string): Promise<FileDocument> {
 	const { tablesDB } = createAdminClient();
 
 	const file = await tablesDB.getRow({
@@ -221,11 +234,14 @@ export async function deleteFile(fileId: string, userId: string) {
 		deleteCache(CacheKeys.folderSize(parentFolderId));
 	}
 
-	return file;
+	return file as unknown as FileDocument;
 }
 
-export async function getFileDownloadUrl(fileId: string, userId: string) {
+export async function getFileDownloadUrl(
+	fileId: string,
+	userId: string
+): Promise<FileDownloadResult> {
 	const file = await getFile(fileId, userId);
-	const url = await getDownloadUrl(file.r2Key as string, file.name as string);
+	const url = await getDownloadUrl(file.r2Key, file.name);
 	return { file, url };
 }

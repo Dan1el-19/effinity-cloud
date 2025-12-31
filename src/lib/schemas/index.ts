@@ -28,8 +28,18 @@ export const renameSchema = z.object({
 	name: z.string().min(1, 'Name is required').max(255, 'Name too long')
 });
 
+export const updateFileSchema = z.object({
+	name: z.string().min(1, 'Name is required').max(255, 'Name too long').optional(),
+	parentFolderId: z.string().nullable().optional()
+});
+
 export const createFolderSchema = z.object({
 	name: z.string().min(1, 'Folder name is required').max(255, 'Folder name too long'),
+	parentFolderId: z.string().nullable().optional()
+});
+
+export const updateFolderSchema = z.object({
+	name: z.string().min(1, 'Name is required').max(255, 'Name too long').optional(),
 	parentFolderId: z.string().nullable().optional()
 });
 
