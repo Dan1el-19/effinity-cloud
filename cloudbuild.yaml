@@ -71,6 +71,9 @@ steps:
       - 'europe-central2'
       - '--platform'
       - 'managed'
+      - '--port'
+      - '3000'
+      - '--allow-unauthenticated'
     waitFor:
       - 'Push-SHA-Tag'
 
