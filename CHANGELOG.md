@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/Dan1el-19/effinity-cloud/compare/v1.4.0...v1.5.0) (2025-12-31)
+
+
+### Features
+
+* implement API rate limiting, centralize constants and environment variables, and add UI notifications ([d9594cf](https://github.com/Dan1el-19/effinity-cloud/commit/d9594cfc1a0e61977013a052c57b3b77cd449afb))
+* Migrate database initialization to Appwrite TablesDB API, introduce new storage types, and add validation schemas for file and folder management. ([2de7ef5](https://github.com/Dan1el-19/effinity-cloud/commit/2de7ef55ba3041ff9a6f2ddd5bd33d4aa421370c))
+
 # [1.4.0](https://github.com/Dan1el-19/effinity-cloud/compare/v1.3.0...v1.4.0) (2025-12-26)
 
 
