@@ -1,24 +1,35 @@
 <script lang="ts">
-	import { invalidateAll, goto } from '$app/navigation';
-	import { Folder, FileText, Download, Trash2, ArrowLeft, FolderDown, Home } from 'lucide-svelte';
+	import { invalidateAll } from '$app/navigation';
+	import {
+		Folder,
+		FileText,
+		Download,
+		Trash2,
+		ArrowLeft,
+		FolderDown,
+		Home,
+		Cloud
+	} from 'lucide-svelte';
 	import { formatFileSize } from '$lib/utils/format';
 	import { toast } from 'svelte-sonner';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
 
 	let { data } = $props();
 
 	async function deleteFile(fileId: string, fileName: string) {
-		if (!confirm(`Usunąć "${fileName}"?`)) return;
+		if (!confirm(`Delete "${fileName}"?`)) return;
 
 		try {
 			const res = await fetch(`/api/files/${fileId}?targetUserId=${data.targetUser.$id}`, {
 				method: 'DELETE'
 			});
 			if (res.ok) {
-				toast.success(`Usunięto: ${fileName}`);
+				toast.success(`Deleted: ${fileName}`);
 				invalidateAll();
 			} else {
 				const result = await res.json();
-				toast.error(result.error || 'Błąd usuwania');
+				toast.error(result.error || 'Delete failed');
 			}
 		} catch (e: any) {
 			toast.error(e.message);
@@ -32,7 +43,7 @@
 			);
 			const result = await res.json();
 			if (result.downloadUrl) {
-				toast.info(`Pobieranie: ${fileName}`);
+				toast.info(`Downloading: ${fileName}`);
 				window.location.href = result.downloadUrl;
 			}
 		} catch (e: any) {
@@ -41,18 +52,18 @@
 	}
 
 	async function deleteFolder(folderId: string, folderName: string) {
-		if (!confirm(`Usunąć folder "${folderName}" i całą jego zawartość?`)) return;
+		if (!confirm(`Delete folder "${folderName}" and all contents?`)) return;
 
 		try {
 			const res = await fetch(`/api/folders/${folderId}?targetUserId=${data.targetUser.$id}`, {
 				method: 'DELETE'
 			});
 			if (res.ok) {
-				toast.success(`Usunięto: ${folderName}`);
+				toast.success(`Deleted: ${folderName}`);
 				invalidateAll();
 			} else {
 				const result = await res.json();
-				toast.error(result.error || 'Błąd usuwania');
+				toast.error(result.error || 'Delete failed');
 			}
 		} catch (e: any) {
 			toast.error(e.message);
@@ -60,223 +71,165 @@
 	}
 
 	function downloadFolder(folderId: string, folderName: string) {
-		toast.info(`Pobieranie: ${folderName}.zip`);
+		toast.info(`Archiving: ${folderName}.zip`);
 		window.location.href = `/api/folders/${folderId}/download?targetUserId=${data.targetUser.$id}`;
 	}
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="space-y-6">
 	<!-- Header -->
-	<header class="sticky top-0 z-40 border-b border-gray-200 bg-white">
-		<div class="mx-auto max-w-6xl px-4 py-3 sm:px-6">
-			<div class="flex items-center gap-4">
-				<a
-					href="/admin/users/{data.targetUser.$id}"
-					class="rounded-lg p-2 hover:bg-gray-100"
-					title="Powrót"
-				>
-					<ArrowLeft class="h-5 w-5" />
-				</a>
-				<div class="min-w-0">
-					<h1 class="truncate text-lg font-bold text-gray-900 sm:text-xl">
-						Magazyn: {data.targetUser.name || data.targetUser.email}
-					</h1>
-					<p class="text-sm text-gray-500">Podgląd administratora</p>
-				</div>
-			</div>
+	<div class="flex items-center gap-4">
+		<a href="/admin/users/{data.targetUser.$id}">
+			<Button variant="ghost" size="icon">
+				<ArrowLeft class="h-5 w-5" />
+			</Button>
+		</a>
+		<div>
+			<h1 class="text-xl font-bold tracking-tight text-text-main lg:text-2xl">
+				{data.targetUser.email}
+			</h1>
+			<p class="text-sm text-text-muted">Storage Preview Mode</p>
 		</div>
-	</header>
+	</div>
 
-	<main class="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-		<!-- Breadcrumbs -->
-		{#if data.breadcrumbs.length > 1}
-			<nav class="mb-4 flex flex-wrap items-center gap-2 text-sm">
-				{#each data.breadcrumbs as crumb, i}
-					{#if i > 0}
-						<span class="text-gray-400">/</span>
-					{/if}
-					{#if i === data.breadcrumbs.length - 1}
-						<span class="font-medium text-gray-900">{crumb.name}</span>
-					{:else if crumb.id === null}
-						<a
-							href="/preview/{data.targetUser.$id}"
-							class="flex items-center gap-1 text-blue-600 hover:underline"
-						>
-							<Home class="h-4 w-4" />
-							<span class="hidden sm:inline">{crumb.name}</span>
-						</a>
-					{:else}
-						<a
-							href="/preview/{data.targetUser.$id}?folder={crumb.id}"
-							class="text-blue-600 hover:underline"
-						>
-							{crumb.name}
-						</a>
-					{/if}
-				{/each}
-			</nav>
-		{/if}
+	<!-- Breadcrumbs -->
+	<div class="flex flex-wrap items-center gap-1 text-sm text-text-muted">
+		{#each data.breadcrumbs as crumb, i}
+			{#if i > 0}
+				<span class="text-border-line">/</span>
+			{/if}
+			{#if crumb.id === null}
+				<a
+					href="/preview/{data.targetUser.$id}"
+					class="flex items-center gap-1 hover:text-primary hover:underline"
+				>
+					<Home class="h-4 w-4" />
+					<span class="sr-only">Root</span>
+				</a>
+			{:else}
+				<a
+					href="/preview/{data.targetUser.$id}?folder={crumb.id}"
+					class="hover:text-primary hover:underline"
+				>
+					{crumb.name}
+				</a>
+			{/if}
+		{/each}
+	</div>
 
+	<!-- Content -->
+	<Card class="min-h-[400px]">
 		{#if data.files.length === 0 && data.folders.length === 0}
-			<div class="py-12 text-center">
-				<Folder class="mx-auto h-12 w-12 text-gray-300" />
-				<p class="mt-2 text-gray-500">Ten folder jest pusty</p>
+			<div class="flex h-64 flex-col items-center justify-center text-text-muted">
+				<div class="mb-4 rounded-full bg-bg-app p-4">
+					<Cloud class="h-8 w-8 opacity-20" />
+				</div>
+				<p>This folder is empty</p>
 			</div>
 		{:else}
-			<!-- Desktop: Table view -->
-			<div
-				class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm lg:block"
-			>
-				<table class="w-full">
-					<thead class="border-b border-gray-200 bg-gray-50">
-						<tr>
-							<th class="w-10 px-6 py-3"></th>
-							<th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase"
-								>Nazwa</th
-							>
-							<th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Data</th
-							>
-							<th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase"
-								>Rozmiar</th
-							>
-							<th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase"
-								>Akcje</th
-							>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-100">
-						{#each data.folders as folder}
-							<tr class="transition-colors hover:bg-gray-50">
-								<td class="px-6 py-4 text-amber-500">
-									<Folder class="h-5 w-5" />
-								</td>
-								<td class="px-6 py-4">
-									<a
-										href="/preview/{data.targetUser.$id}?folder={folder.$id}"
-										class="font-medium text-gray-900 hover:text-blue-600"
-									>
-										{folder.name}
-									</a>
-								</td>
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-									{new Date(folder.$createdAt).toLocaleDateString('pl-PL')}
-								</td>
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-									{folder.size ? formatFileSize(folder.size) : '-'}
-								</td>
-								<td class="px-6 py-4 text-right">
-									<button
-										onclick={() => downloadFolder(folder.$id, folder.name)}
-										class="mr-2 text-green-600 hover:text-green-800"
-										title="Pobierz ZIP"
-									>
-										<FolderDown class="inline h-4 w-4" />
-									</button>
-									<button
-										onclick={() => deleteFolder(folder.$id, folder.name)}
-										class="text-red-600 hover:text-red-800"
-										title="Usuń"
-									>
-										<Trash2 class="inline h-4 w-4" />
-									</button>
-								</td>
-							</tr>
-						{/each}
+			<!-- Table Layout -->
+			<div class="w-full">
+				<div
+					class="hidden border-b border-border-line bg-bg-app px-4 py-3 text-xs font-medium text-text-muted uppercase lg:grid lg:grid-cols-[auto_1fr_auto_auto_auto] lg:gap-4"
+				>
+					<div class="w-6"></div>
+					<div>Name</div>
+					<div class="w-32">Date</div>
+					<div class="w-24">Size</div>
+					<div class="w-24 text-right">Actions</div>
+				</div>
 
-						{#each data.files as file}
-							<tr class="transition-colors hover:bg-gray-50">
-								<td class="px-6 py-4 text-gray-400">
-									<FileText class="h-5 w-5" />
-								</td>
-								<td class="px-6 py-4 font-medium text-gray-900">{file.name}</td>
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-									{new Date(file.$createdAt).toLocaleDateString('pl-PL')}
-								</td>
-								<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
-									{formatFileSize(file.size)}
-								</td>
-								<td class="px-6 py-4 text-right">
-									<button
-										onclick={() => downloadFile(file.$id, file.name)}
-										class="mr-2 text-green-600 hover:text-green-800"
-										title="Pobierz"
-									>
-										<Download class="inline h-4 w-4" />
-									</button>
-									<button
-										onclick={() => deleteFile(file.$id, file.name)}
-										class="text-red-600 hover:text-red-800"
-										title="Usuń"
-									>
-										<Trash2 class="inline h-4 w-4" />
-									</button>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-
-			<!-- Mobile: Card view -->
-			<div class="space-y-2 lg:hidden">
-				{#each data.folders as folder}
-					<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-						<div class="flex items-center justify-between">
-							<a
-								href="/preview/{data.targetUser.$id}?folder={folder.$id}"
-								class="flex min-w-0 flex-1 items-center gap-3"
-							>
-								<Folder class="h-5 w-5 shrink-0 text-amber-500" />
-								<div class="min-w-0">
-									<p class="truncate font-medium text-gray-900">{folder.name}</p>
-									<p class="text-xs text-gray-500">
-										{folder.size ? formatFileSize(folder.size) : 'Folder'}
-									</p>
-								</div>
-							</a>
-							<div class="ml-2 flex items-center gap-1">
-								<button
+				<div class="divide-y divide-border-line">
+					<!-- Folders -->
+					{#each data.folders as folder}
+						<div
+							class="hover:bg-bg-msg-hover flex flex-col gap-2 p-4 transition-colors lg:grid lg:grid-cols-[auto_1fr_auto_auto_auto] lg:items-center lg:gap-4 lg:py-2"
+						>
+							<div class="hidden text-amber-500 lg:block">
+								<Folder class="h-4 w-4" />
+							</div>
+							<div class="flex items-center gap-3 lg:gap-0">
+								<Folder class="h-5 w-5 text-amber-500 lg:hidden" />
+								<a
+									href="/preview/{data.targetUser.$id}?folder={folder.$id}"
+									class="font-medium text-text-main hover:text-primary hover:underline"
+								>
+									{folder.name}
+								</a>
+							</div>
+							<div class="text-xs text-text-muted lg:text-sm">
+								{new Date(folder.$createdAt).toLocaleDateString('pl-PL')}
+							</div>
+							<div class="text-xs text-text-muted lg:text-sm">
+								{folder.size ? formatFileSize(folder.size) : '-'}
+							</div>
+							<div class="flex justify-end gap-1">
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
 									onclick={() => downloadFolder(folder.$id, folder.name)}
-									class="p-2 text-green-600"
+									title="Download ZIP"
 								>
 									<FolderDown class="h-4 w-4" />
-								</button>
-								<button
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
 									onclick={() => deleteFolder(folder.$id, folder.name)}
-									class="p-2 text-red-600"
+									title="Delete"
 								>
 									<Trash2 class="h-4 w-4" />
-								</button>
+								</Button>
 							</div>
 						</div>
-					</div>
-				{/each}
+					{/each}
 
-				{#each data.files as file}
-					<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-						<div class="flex items-center justify-between">
-							<div class="flex min-w-0 flex-1 items-center gap-3">
-								<FileText class="h-5 w-5 shrink-0 text-gray-400" />
-								<div class="min-w-0">
-									<p class="truncate font-medium text-gray-900">{file.name}</p>
-									<p class="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-								</div>
+					<!-- Files -->
+					{#each data.files as file}
+						<div
+							class="hover:bg-bg-msg-hover flex flex-col gap-2 p-4 transition-colors lg:grid lg:grid-cols-[auto_1fr_auto_auto_auto] lg:items-center lg:gap-4 lg:py-2"
+						>
+							<div class="hidden text-text-muted lg:block">
+								<FileText class="h-4 w-4" />
 							</div>
-							<div class="ml-2 flex items-center gap-1">
-								<button
+							<div class="flex items-center gap-3 lg:gap-0">
+								<FileText class="h-5 w-5 text-text-muted lg:hidden" />
+								<span class="truncate font-medium text-text-main" title={file.name}>
+									{file.name}
+								</span>
+							</div>
+							<div class="text-xs text-text-muted lg:text-sm">
+								{new Date(file.$createdAt).toLocaleDateString('pl-PL')}
+							</div>
+							<div class="text-xs text-text-muted lg:text-sm">
+								{formatFileSize(file.size)}
+							</div>
+							<div class="flex justify-end gap-1">
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
 									onclick={() => downloadFile(file.$id, file.name)}
-									class="p-2 text-green-600"
+									title="Download"
 								>
 									<Download class="h-4 w-4" />
-								</button>
-								<button onclick={() => deleteFile(file.$id, file.name)} class="p-2 text-red-600">
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+									onclick={() => deleteFile(file.$id, file.name)}
+									title="Delete"
+								>
 									<Trash2 class="h-4 w-4" />
-								</button>
+								</Button>
 							</div>
 						</div>
-					</div>
-				{/each}
+					{/each}
+				</div>
 			</div>
 		{/if}
-	</main>
+	</Card>
 </div>

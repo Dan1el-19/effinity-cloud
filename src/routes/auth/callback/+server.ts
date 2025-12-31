@@ -10,7 +10,12 @@ export const GET: RequestHandler = async (event) => {
 	}
 
 	const { account } = createAdminClient();
+	console.log('[AUTH_CALLBACK] Attempting to create session...', {
+		userId,
+		secretLength: secret.length
+	});
 	const session = await account.createSession({ userId, secret });
+	console.log('[AUTH_CALLBACK] Session created successfully', { expire: session.expire });
 
 	event.cookies.set(SESSION_COOKIE, session.secret, {
 		path: '/',

@@ -7,11 +7,11 @@ export const cache = lru(500, 300000);
 export function getCached<T>(key: string): T | undefined {
 	const value = cache.get(key) as T | undefined;
 	if (DEBUG) {
-		if (value !== undefined) {
-			console.log(`[CACHE HIT] ${key}`);
-		} else {
-			console.log(`[CACHE MISS] ${key}`);
-		}
+		// 		if (value !== undefined) {
+		// 			console.log(`[CACHE HIT] ${key}`);
+		// 		} else {
+		// 			console.log(`[CACHE MISS] ${key}`);
+		// 		}
 	}
 	return value;
 }

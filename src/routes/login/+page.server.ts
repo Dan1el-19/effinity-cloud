@@ -16,7 +16,9 @@ export const actions: Actions = {
 		const { account } = createAdminClient();
 
 		try {
+			console.log('[LOGIN] Attempting email/password session...', { email });
 			const session = await account.createEmailPasswordSession({ email, password });
+			console.log('[LOGIN] Session created successfully');
 
 			event.cookies.set(SESSION_COOKIE, session.secret, {
 				path: '/',

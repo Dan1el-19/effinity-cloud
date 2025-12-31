@@ -1,75 +1,90 @@
 <script lang="ts">
 	import { Users, Database, Crown, Sparkles, User } from 'lucide-svelte';
 	import { formatFileSize } from '$lib/utils/format';
+	import Card from '$lib/components/ui/Card.svelte';
 
 	let { data } = $props();
+
+	// Determine colors/icons dynamically or just hardcode for reliability
 </script>
 
 <div class="space-y-6">
-	<div>
-		<h1 class="text-2xl font-bold text-gray-900 lg:text-3xl">Dashboard</h1>
-		<p class="mt-1 text-gray-500">Przegląd systemu Effinity Cloud</p>
-	</div>
-
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<div class="flex items-center gap-3">
-				<div class="rounded-lg bg-blue-100 p-2">
-					<Users class="h-5 w-5 text-blue-600" />
+		<!-- Total Users -->
+		<Card
+			class="border-border-line bg-bg-panel p-0 transition-all hover:bg-gray-50 dark:hover:bg-zinc-800/50"
+		>
+			<div class="flex items-center gap-4">
+				<div class="rounded-full bg-blue-100/50 p-2.5 dark:bg-blue-900/20">
+					<Users class="h-5 w-5 text-primary" />
 				</div>
-				<div>
-					<p class="text-sm text-gray-500">Wszyscy użytkownicy</p>
-					<p class="text-2xl font-bold text-gray-900">{data.stats.totalUsers}</p>
+				<div class="flex flex-col">
+					<span class="text-xs font-medium tracking-wider text-text-muted uppercase"
+						>Total Users</span
+					>
+					<span class="font-mono text-2xl font-bold text-text-main">{data.stats.totalUsers}</span>
 				</div>
 			</div>
-		</div>
+		</Card>
 
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<div class="flex items-center gap-3">
-				<div class="rounded-lg bg-gray-100 p-2">
-					<User class="h-5 w-5 text-gray-600" />
+		<!-- Basic -->
+		<Card class="border-border-line bg-bg-panel p-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+			<div class="flex items-center gap-4">
+				<div class="rounded-full bg-gray-100 p-2.5 dark:bg-zinc-800">
+					<User class="h-5 w-5 text-gray-600 dark:text-gray-400" />
 				</div>
-				<div>
-					<p class="text-sm text-gray-500">Basic</p>
-					<p class="text-2xl font-bold text-gray-900">{data.stats.usersByRole.basic}</p>
+				<div class="flex flex-col">
+					<span class="text-xs font-medium tracking-wider text-text-muted uppercase">Basic</span>
+					<span class="font-mono text-2xl font-bold text-text-main"
+						>{data.stats.usersByRole.basic}</span
+					>
 				</div>
 			</div>
-		</div>
+		</Card>
 
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<div class="flex items-center gap-3">
-				<div class="rounded-lg bg-purple-100 p-2">
-					<Sparkles class="h-5 w-5 text-purple-600" />
+		<!-- Plus -->
+		<Card class="border-border-line bg-bg-panel p-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+			<div class="flex items-center gap-4">
+				<div class="rounded-full bg-purple-100/50 p-2.5 dark:bg-purple-900/20">
+					<Sparkles class="h-5 w-5 text-purple-600 dark:text-purple-400" />
 				</div>
-				<div>
-					<p class="text-sm text-gray-500">Plus</p>
-					<p class="text-2xl font-bold text-gray-900">{data.stats.usersByRole.plus}</p>
+				<div class="flex flex-col">
+					<span class="text-xs font-medium tracking-wider text-text-muted uppercase">Plus</span>
+					<span class="font-mono text-2xl font-bold text-text-main"
+						>{data.stats.usersByRole.plus}</span
+					>
 				</div>
 			</div>
-		</div>
+		</Card>
 
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<div class="flex items-center gap-3">
-				<div class="rounded-lg bg-amber-100 p-2">
-					<Crown class="h-5 w-5 text-amber-600" />
+		<!-- Admin -->
+		<Card class="border-border-line bg-bg-panel p-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50">
+			<div class="flex items-center gap-4">
+				<div class="rounded-full bg-amber-100/50 p-2.5 dark:bg-amber-900/20">
+					<Crown class="h-5 w-5 text-amber-600 dark:text-amber-500" />
 				</div>
-				<div>
-					<p class="text-sm text-gray-500">Admin</p>
-					<p class="text-2xl font-bold text-gray-900">{data.stats.usersByRole.admin}</p>
+				<div class="flex flex-col">
+					<span class="text-xs font-medium tracking-wider text-text-muted uppercase">Admin</span>
+					<span class="font-mono text-2xl font-bold text-text-main"
+						>{data.stats.usersByRole.admin}</span
+					>
 				</div>
 			</div>
-		</div>
+		</Card>
 	</div>
 
-	<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-		<div class="flex items-center gap-3">
-			<div class="rounded-lg bg-green-100 p-2">
-				<Database class="h-5 w-5 text-green-600" />
+	<!-- Storage -->
+	<Card title="System Storage">
+		<div class="flex items-center gap-4">
+			<div class="rounded-full bg-green-100/50 p-3 dark:bg-green-900/20">
+				<Database class="h-6 w-6 text-green-600 dark:text-green-500" />
 			</div>
 			<div>
-				<p class="text-sm text-gray-500">Całkowite zużycie storage</p>
-				<p class="text-2xl font-bold text-gray-900">{formatFileSize(data.stats.totalStorage)}</p>
+				<p class="font-mono text-3xl font-bold text-text-main">
+					{formatFileSize(data.stats.totalStorage)}
+				</p>
+				<p class="text-sm text-text-muted">Total allocated size across all buckets</p>
 			</div>
 		</div>
-	</div>
+	</Card>
 </div>

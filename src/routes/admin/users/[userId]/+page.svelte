@@ -11,6 +11,10 @@
 		Save
 	} from 'lucide-svelte';
 	import { formatFileSize } from '$lib/utils/format';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
+	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
 
@@ -23,7 +27,6 @@
 	let customLimit = $state('');
 	let newPassword = $state('');
 	let saving = $state(false);
-	let message = $state('');
 
 	$effect(() => {
 		selectedRole = initialRole;
@@ -51,17 +54,16 @@
 				body: JSON.stringify({ role: selectedRole })
 			});
 			if (res.ok) {
-				message = 'Rola zapisana!';
+				toast.success('Role updated successfully');
 				invalidateAll();
 			} else {
 				const err = await res.json();
-				message = err.error || 'Błąd zapisu';
+				toast.error(err.error || 'Failed to save role');
 			}
 		} catch (e: any) {
-			message = e.message;
+			toast.error(e.message);
 		}
 		saving = false;
-		setTimeout(() => (message = ''), 3000);
 	}
 
 	async function saveStorageLimit() {
@@ -74,23 +76,21 @@
 				body: JSON.stringify({ limit: limitBytes })
 			});
 			if (res.ok) {
-				message = 'Limit zapisany!';
+				toast.success('Storage limit updated');
 				invalidateAll();
 			} else {
 				const err = await res.json();
-				message = err.error || 'Błąd zapisu';
+				toast.error(err.error || 'Failed to save limit');
 			}
 		} catch (e: any) {
-			message = e.message;
+			toast.error(e.message);
 		}
 		saving = false;
-		setTimeout(() => (message = ''), 3000);
 	}
 
 	async function savePassword() {
 		if (newPassword.length < 8) {
-			message = 'Hasło musi mieć min. 8 znaków';
-			setTimeout(() => (message = ''), 3000);
+			toast.error('Password must be at least 8 characters');
 			return;
 		}
 		saving = true;
@@ -101,52 +101,55 @@
 				body: JSON.stringify({ password: newPassword })
 			});
 			if (res.ok) {
-				message = 'Hasło zmienione!';
+				toast.success('Password updated');
 				newPassword = '';
 			} else {
 				const err = await res.json();
-				message = err.error || 'Błąd zapisu';
+				toast.error(err.error || 'Failed to save password');
 			}
 		} catch (e: any) {
-			message = e.message;
+			toast.error(e.message);
 		}
 		saving = false;
-		setTimeout(() => (message = ''), 3000);
 	}
 </script>
 
 <div class="space-y-6">
+	<!-- Header -->
 	<div class="flex items-center gap-4">
-		<a
-			href="/admin/users"
-			class="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
-		>
-			<ArrowLeft class="h-5 w-5" />
+		<a href="/admin/users">
+			<Button variant="ghost" size="icon">
+				<ArrowLeft class="h-5 w-5" />
+			</Button>
 		</a>
 		<div>
-			<h1 class="text-xl font-bold text-gray-900 lg:text-2xl">{data.targetUser.email}</h1>
-			<p class="text-sm text-gray-500">
-				Utworzono: {new Date(data.targetUser.$createdAt).toLocaleDateString('pl-PL')}
+			<h1 class="text-xl font-bold tracking-tight text-text-main lg:text-2xl">
+				{data.targetUser.email}
+			</h1>
+			<p class="text-sm text-text-muted">
+				User ID: <span class="font-mono text-xs">{data.targetUser.$id}</span> • Joined: {new Date(
+					data.targetUser.$createdAt
+				).toLocaleDateString('pl-PL')}
 			</p>
 		</div>
 	</div>
 
-	{#if message}
-		<div class="rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
-			{message}
-		</div>
-	{/if}
-
 	<div class="grid gap-6 lg:grid-cols-2">
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900">Rola użytkownika</h2>
+		<!-- Role Management -->
+		<Card title="User Role" description="Manage user permissions and access levels.">
 			<div class="space-y-3">
 				{#each ['basic', 'plus', 'admin'] as role (role)}
-					{@const icons: Record<string, typeof UserIcon> = { basic: UserIcon, plus: Sparkles, admin: Crown }}
+					{@const icons: Record<string, typeof UserIcon> = {
+						basic: UserIcon,
+						plus: Sparkles,
+						admin: Crown
+					}}
 					{@const Icon = icons[role]}
 					<label
-						class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors
-						{selectedRole === role ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:bg-gray-50'}"
+						class="flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors
+						{selectedRole === role
+							? 'border-primary/50 bg-primary/5'
+							: 'hover:bg-bg-msg-hover border-border-line'}"
 					>
 						<input
 							type="radio"
@@ -157,90 +160,118 @@
 						/>
 						<Icon
 							class="h-5 w-5 {role === 'admin'
-								? 'text-amber-600'
+								? 'text-amber-500'
 								: role === 'plus'
-									? 'text-purple-600'
-									: 'text-gray-600'}"
+									? 'text-purple-500'
+									: 'text-text-muted'}"
 						/>
-						<span class="font-medium capitalize">{role}</span>
+						<span class="font-medium text-text-main capitalize">{role}</span>
 					</label>
 				{/each}
 			</div>
-			<button
-				onclick={saveRole}
-				disabled={saving || selectedRole === data.targetUser.role}
-				class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				<Save class="h-4 w-4" />
-				Zapisz rolę
-			</button>
-		</div>
 
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900">Limit storage</h2>
-			<p class="mb-3 text-sm text-gray-500">
-				Aktualne zużycie: <strong>{formatFileSize(data.targetUser.storageUsage)}</strong> /
-				{data.targetUser.storageLimit === Infinity
-					? '∞'
-					: formatFileSize(data.targetUser.storageLimit)}
-			</p>
-			<div class="flex gap-2">
-				<input
-					type="number"
-					bind:value={customLimit}
-					placeholder="Custom limit (GB)"
-					class="flex-1 rounded-lg border border-gray-200 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-indigo-500"
-				/>
-				<span class="self-center text-gray-500">GB</span>
-			</div>
-			<p class="mt-2 text-xs text-gray-400">Zostaw puste aby użyć domyślnego limitu dla roli</p>
-			<button
-				onclick={saveStorageLimit}
-				disabled={saving}
-				class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-			>
-				<Save class="h-4 w-4" />
-				Zapisz limit
-			</button>
-		</div>
-
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900">Zmiana hasła</h2>
-			<div class="flex gap-2">
-				<input
-					type="text"
-					bind:value={newPassword}
-					placeholder="Nowe hasło"
-					class="flex-1 rounded-lg border border-gray-200 px-3 py-2 font-mono focus:border-transparent focus:ring-2 focus:ring-indigo-500"
-				/>
-				<button
-					onclick={generatePassword}
-					class="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50"
-					title="Generuj losowe hasło"
+			{#snippet footer()}
+				<Button
+					onclick={saveRole}
+					disabled={saving || selectedRole === data.targetUser.role}
+					class="w-full"
 				>
-					<RefreshCw class="h-5 w-5 text-gray-600" />
-				</button>
-			</div>
-			<button
-				onclick={savePassword}
-				disabled={saving || !newPassword}
-				class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				<Key class="h-4 w-4" />
-				Ustaw hasło
-			</button>
-		</div>
+					<Save class="mr-2 h-4 w-4" />
+					Save Role
+				</Button>
+			{/snippet}
+		</Card>
 
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-			<h2 class="mb-4 text-lg font-semibold text-gray-900">Magazyn użytkownika</h2>
-			<p class="mb-4 text-sm text-gray-500">Przeglądaj i zarządzaj plikami tego użytkownika</p>
-			<a
-				href="/preview/{data.targetUser.$id}"
-				class="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-white transition-colors hover:bg-emerald-700"
-			>
-				<FolderOpen class="h-4 w-4" />
-				Otwórz magazyn
-			</a>
-		</div>
+		<!-- Storage Limit -->
+		<Card title="Storage Limit" description="Set a custom storage quota for this user.">
+			<div class="space-y-4">
+				<div class="rounded-md bg-bg-app p-3">
+					<p class="text-sm text-text-muted">Current Usage</p>
+					<div class="flex items-baseline gap-2">
+						<span class="text-lg font-bold text-text-main">
+							{formatFileSize(data.targetUser.storageUsage)}
+						</span>
+						<span class="text-text-muted">/</span>
+						<span class="text-sm text-text-muted">
+							{data.targetUser.storageLimit === Infinity
+								? 'Unlimited'
+								: formatFileSize(data.targetUser.storageLimit)}
+						</span>
+					</div>
+				</div>
+
+				<div class="flex items-end gap-2">
+					<Input
+						type="number"
+						label="Custom Limit (GB)"
+						bind:value={customLimit}
+						placeholder="Default"
+						class="flex-1"
+					/>
+				</div>
+				<p class="text-xs text-text-muted">
+					Current Role Limit: {formatFileSize(
+						initialRole === 'admin'
+							? Infinity
+							: initialRole === 'plus'
+								? 10 * 1024 ** 3
+								: 5 * 1024 ** 3
+					)}
+				</p>
+			</div>
+
+			{#snippet footer()}
+				<Button onclick={saveStorageLimit} disabled={saving} class="w-full">
+					<Save class="mr-2 h-4 w-4" />
+					Save Limit
+				</Button>
+			{/snippet}
+		</Card>
+
+		<!-- Password Reset -->
+		<Card title="Reset Password" description="Manually set a new password for this user.">
+			<div class="flex items-end gap-2">
+				<div class="flex-1">
+					<Input
+						type="text"
+						label="New Password"
+						bind:value={newPassword}
+						placeholder="Enter or generate..."
+						class="font-mono"
+					/>
+				</div>
+				<Button variant="secondary" size="icon" onclick={generatePassword} title="Generate">
+					<RefreshCw class="h-4 w-4" />
+				</Button>
+			</div>
+
+			{#snippet footer()}
+				<Button
+					onclick={savePassword}
+					disabled={saving || !newPassword}
+					class="w-full"
+					variant="secondary"
+				>
+					<Key class="mr-2 h-4 w-4" />
+					Update Password
+				</Button>
+			{/snippet}
+		</Card>
+
+		<!-- User Files -->
+		<Card title="User Files" description="View and manage files owned by this user.">
+			<div class="flex flex-col items-center justify-center py-6 text-center">
+				<div class="mb-3 rounded-full bg-emerald-500/10 p-3 text-emerald-600">
+					<FolderOpen class="h-6 w-6" />
+				</div>
+				<p class="mb-4 text-sm text-text-muted">Browse user's personal file storage directly.</p>
+				<a href="/preview/{data.targetUser.$id}" class="w-full">
+					<Button class="w-full" variant="secondary">
+						<FolderOpen class="mr-2 h-4 w-4" />
+						Open File Browser
+					</Button>
+				</a>
+			</div>
+		</Card>
 	</div>
 </div>
