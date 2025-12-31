@@ -1,7 +1,11 @@
 import { createAdminClient } from '$lib/server/appwrite';
 import { Query } from 'node-appwrite';
 import { getCached, setCache } from '../cache';
-import { CacheKeys, TTL } from '../cache/keys';
+import { CacheKeys } from '../cache/keys';
+import { DATABASE } from '$lib/constants';
+
+const DATABASE_ID = DATABASE.ID;
+const FILES_TABLE = DATABASE.TABLES.FILES;
 
 interface AdminStats {
 	totalUsers: number;

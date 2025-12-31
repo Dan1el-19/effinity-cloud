@@ -1,6 +1,6 @@
 import { lru } from 'tiny-lru';
 
-const DEBUG = true;
+const DEBUG = import.meta.env.DEV;
 
 export const cache = lru(500, 300000);
 

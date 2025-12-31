@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { ENV } from '$lib/server/env';
 import { R2 } from '$lib/clients/r2';
 import { CompleteMultipartUploadCommand } from '@aws-sdk/client-s3';
 import { json } from '@sveltejs/kit';
@@ -37,7 +37,7 @@ export const POST: RequestHandler = async ({ params, url, request }) => {
 	}
 
 	const command = new CompleteMultipartUploadCommand({
-		Bucket: env.R2_BUCKET_NAME,
+		Bucket: ENV.R2_BUCKET_NAME,
 		Key: key,
 		UploadId: uploadId,
 		MultipartUpload: {

@@ -1,11 +1,42 @@
 import { createSessionClient, SESSION_COOKIE } from '$lib/server/appwrite';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { getUserRole } from '$lib/server/roles';
+import {
+	checkRateLimit,
+	rateLimitHeaders,
+	ratelimit,
+	strictRatelimit
+} from '$lib/server/rate-limit';
+import { env } from '$env/dynamic/private';
 
 const PUBLIC_ROUTES = ['/login', '/register', '/auth/callback'];
 
+const RATE_LIMIT_ENABLED = !!env.UPSTASH_REDIS_REST_URL;
+
 export const handle: Handle = async ({ event, resolve }) => {
 	try {
+		if (RATE_LIMIT_ENABLED && event.url.pathname.startsWith('/api/')) {
+			const identifier = event.getClientAddress();
+
+			const isStrictEndpoint =
+				event.url.pathname.includes('/api/uppy/') ||
+				event.url.pathname.includes('/api/files') ||
+				event.url.pathname.includes('/api/folders');
+
+			const limiter = isStrictEndpoint ? strictRatelimit : ratelimit;
+			const result = await checkRateLimit(identifier, limiter);
+
+			if (!result.success) {
+				return new Response(JSON.stringify({ error: 'Too many requests' }), {
+					status: 429,
+					headers: {
+						'Content-Type': 'application/json',
+						...rateLimitHeaders(result)
+					}
+				});
+			}
+		}
+
 		const { account } = createSessionClient(event);
 
 		try {

@@ -2,14 +2,9 @@
 	import { invalidateAll } from '$app/navigation';
 	import { Folder, FileText, Download, Pencil, Trash2, FolderDown } from 'lucide-svelte';
 	import { formatFileSize } from '$lib/utils/format';
+	import { toast } from 'svelte-sonner';
 
 	let { files, folders } = $props();
-	let toastMessage = $state('');
-
-	function showToast(message: string) {
-		toastMessage = message;
-		setTimeout(() => (toastMessage = ''), 3000);
-	}
 
 	async function deleteFile(fileId: string, fileName: string) {
 		if (!confirm(`Usunąć "${fileName}"?`)) return;
@@ -17,13 +12,14 @@
 		try {
 			const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' });
 			if (res.ok) {
+				toast.success(`Plik "${fileName}" został usunięty`);
 				invalidateAll();
 			} else {
 				const data = await res.json();
-				alert(data.error || 'Failed to delete file');
+				toast.error(data.error || 'Nie udało się usunąć pliku');
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
@@ -32,11 +28,11 @@
 			const res = await fetch(`/api/files/${fileId}?download=true`);
 			const data = await res.json();
 			if (data.downloadUrl) {
-				showToast(`Pobieranie: ${fileName}`);
+				toast.info(`Pobieranie: ${fileName}`);
 				window.location.href = data.downloadUrl;
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
@@ -51,13 +47,14 @@
 				body: JSON.stringify({ name: newName })
 			});
 			if (res.ok) {
+				toast.success(`Zmieniono nazwę na "${newName}"`);
 				invalidateAll();
 			} else {
 				const data = await res.json();
-				alert(data.error || 'Failed to rename file');
+				toast.error(data.error || 'Nie udało się zmienić nazwy pliku');
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
@@ -67,13 +64,14 @@
 		try {
 			const res = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' });
 			if (res.ok) {
+				toast.success(`Folder "${folderName}" został usunięty`);
 				invalidateAll();
 			} else {
 				const data = await res.json();
-				alert(data.error || 'Failed to delete folder');
+				toast.error(data.error || 'Nie udało się usunąć folderu');
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
@@ -88,18 +86,19 @@
 				body: JSON.stringify({ name: newName })
 			});
 			if (res.ok) {
+				toast.success(`Zmieniono nazwę folderu na "${newName}"`);
 				invalidateAll();
 			} else {
 				const data = await res.json();
-				alert(data.error || 'Failed to rename folder');
+				toast.error(data.error || 'Nie udało się zmienić nazwy folderu');
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
 	function downloadFolder(folderId: string, folderName: string) {
-		showToast(`Pobieranie: ${folderName}.zip`);
+		toast.info(`Pobieranie: ${folderName}.zip`);
 		window.location.href = `/api/folders/${folderId}/download`;
 	}
 </script>
@@ -262,11 +261,5 @@
 				</div>
 			</div>
 		{/each}
-	</div>
-{/if}
-
-{#if toastMessage}
-	<div class="fixed right-4 bottom-4 rounded-lg bg-gray-800 px-4 py-3 text-white shadow-lg">
-		{toastMessage}
 	</div>
 {/if}

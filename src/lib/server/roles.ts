@@ -3,13 +3,14 @@ import { createAdminClient } from '$lib/server/appwrite';
 import { Query } from 'node-appwrite';
 import { getCached, setCache } from './cache';
 import { CacheKeys } from './cache/keys';
+import { STORAGE } from '$lib/constants';
 
 export type UserRole = 'basic' | 'plus' | 'admin';
 
 export const STORAGE_LIMITS = {
-	basic: 5 * 1024 * 1024 * 1024,
-	plus: 10 * 1024 * 1024 * 1024,
-	admin: Infinity
+	basic: STORAGE.LIMITS.BASIC,
+	plus: STORAGE.LIMITS.PLUS,
+	admin: STORAGE.LIMITS.ADMIN
 };
 
 export const MAIN_STORAGE_OWNER_ID = 'main-storage';

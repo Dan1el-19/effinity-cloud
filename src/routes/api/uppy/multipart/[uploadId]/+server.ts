@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { ENV } from '$lib/server/env';
 import { R2 } from '$lib/clients/r2';
 import { ListPartsCommand, AbortMultipartUploadCommand } from '@aws-sdk/client-s3';
 import { json } from '@sveltejs/kit';
@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
 	do {
 		const command = new ListPartsCommand({
-			Bucket: env.R2_BUCKET_NAME,
+			Bucket: ENV.R2_BUCKET_NAME,
 			Key: key,
 			UploadId: uploadId,
 			PartNumberMarker: partNumberMarker
@@ -56,7 +56,7 @@ export const DELETE: RequestHandler = async ({ params, url }) => {
 	}
 
 	const command = new AbortMultipartUploadCommand({
-		Bucket: env.R2_BUCKET_NAME,
+		Bucket: ENV.R2_BUCKET_NAME,
 		Key: key,
 		UploadId: uploadId
 	});

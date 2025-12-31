@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { ENV } from '$lib/server/env';
 import { R2 } from '$lib/clients/r2';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import archiver from 'archiver';
@@ -6,11 +6,12 @@ import { PassThrough, Readable } from 'stream';
 import { createAdminClient } from '$lib/server/appwrite';
 import { Query } from 'node-appwrite';
 import { getFolder, calculateFolderSize } from './folders';
+import { DATABASE, STORAGE } from '$lib/constants';
 
-const DATABASE_ID = 'main';
-const FILES_TABLE = 'files';
-const FOLDERS_TABLE = 'folders';
-const MAX_ZIP_SIZE = 10 * 1024 * 1024 * 1024;
+const DATABASE_ID = DATABASE.ID;
+const FILES_TABLE = DATABASE.TABLES.FILES;
+const FOLDERS_TABLE = DATABASE.TABLES.FOLDERS;
+const MAX_ZIP_SIZE = STORAGE.MAX_ZIP_SIZE;
 
 interface FolderFile {
 	r2Key: string;
@@ -84,7 +85,7 @@ export async function streamFolderAsZip(
 			for (const file of files) {
 				const response = await R2.send(
 					new GetObjectCommand({
-						Bucket: env.R2_BUCKET_NAME,
+						Bucket: ENV.R2_BUCKET_NAME,
 						Key: file.r2Key
 					})
 				);

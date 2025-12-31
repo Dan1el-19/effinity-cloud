@@ -4,9 +4,10 @@ import { deleteR2Object, getDownloadUrl } from './r2';
 import { checkStorageQuota, MAIN_STORAGE_OWNER_ID } from '../roles';
 import { getCached, setCache, deleteCache, invalidateByPrefix } from '../cache';
 import { CacheKeys } from '../cache/keys';
+import { DATABASE } from '$lib/constants';
 
-const DATABASE_ID = 'main';
-const FILES_TABLE = 'files';
+const DATABASE_ID = DATABASE.ID;
+const FILES_TABLE = DATABASE.TABLES.FILES;
 
 interface FileMetadata {
 	name: string;
@@ -198,7 +199,8 @@ export async function deleteFile(fileId: string, userId: string) {
 		throw new Error('Access denied.');
 	}
 
-	await deleteR2Object(file.r2Key as string);
+	const r2Key = file.r2Key as string;
+	const parentFolderId = file.parentFolderId as string | null;
 
 	await tablesDB.deleteRow({
 		databaseId: DATABASE_ID,
@@ -206,11 +208,17 @@ export async function deleteFile(fileId: string, userId: string) {
 		rowId: fileId
 	});
 
+	try {
+		await deleteR2Object(r2Key);
+	} catch (error) {
+		console.error(`Failed to delete R2 object ${r2Key}:`, error);
+	}
+
 	deleteCache(CacheKeys.fileMetadata(fileId));
 	invalidateByPrefix(CacheKeys.userFilesPrefix(userId));
 	deleteCache(CacheKeys.storageUsage(userId));
-	if (file.parentFolderId) {
-		deleteCache(CacheKeys.folderSize(file.parentFolderId as string));
+	if (parentFolderId) {
+		deleteCache(CacheKeys.folderSize(parentFolderId));
 	}
 
 	return file;

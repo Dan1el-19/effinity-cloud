@@ -3,10 +3,11 @@ import { ID, Query } from 'node-appwrite';
 import { deleteR2Object } from './r2';
 import { getCached, setCache, deleteCache, invalidateByPrefix } from '../cache';
 import { CacheKeys } from '../cache/keys';
+import { DATABASE } from '$lib/constants';
 
-const DATABASE_ID = 'main';
-const FOLDERS_TABLE = 'folders';
-const FILES_TABLE = 'files';
+const DATABASE_ID = DATABASE.ID;
+const FOLDERS_TABLE = DATABASE.TABLES.FOLDERS;
+const FILES_TABLE = DATABASE.TABLES.FILES;
 
 export async function getFolder(folderId: string, userId: string) {
 	const { tablesDB } = createAdminClient();
@@ -242,12 +243,17 @@ export async function deleteFolder(folderId: string, userId: string) {
 	});
 
 	for (const file of files.rows) {
-		await deleteR2Object(file.r2Key as string);
+		const r2Key = file.r2Key as string;
 		await tablesDB.deleteRow({
 			databaseId: DATABASE_ID,
 			tableId: FILES_TABLE,
 			rowId: file.$id
 		});
+		try {
+			await deleteR2Object(r2Key);
+		} catch (error) {
+			console.error(`Failed to delete R2 object ${r2Key}:`, error);
+		}
 		deleteCache(CacheKeys.fileMetadata(file.$id));
 	}
 

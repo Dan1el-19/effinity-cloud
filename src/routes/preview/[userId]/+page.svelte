@@ -2,14 +2,9 @@
 	import { invalidateAll, goto } from '$app/navigation';
 	import { Folder, FileText, Download, Trash2, ArrowLeft, FolderDown, Home } from 'lucide-svelte';
 	import { formatFileSize } from '$lib/utils/format';
+	import { toast } from 'svelte-sonner';
 
 	let { data } = $props();
-	let toastMessage = $state('');
-
-	function showToast(message: string) {
-		toastMessage = message;
-		setTimeout(() => (toastMessage = ''), 3000);
-	}
 
 	async function deleteFile(fileId: string, fileName: string) {
 		if (!confirm(`Usunąć "${fileName}"?`)) return;
@@ -19,14 +14,14 @@
 				method: 'DELETE'
 			});
 			if (res.ok) {
+				toast.success(`Usunięto: ${fileName}`);
 				invalidateAll();
-				showToast(`Usunięto: ${fileName}`);
 			} else {
 				const result = await res.json();
-				alert(result.error || 'Błąd usuwania');
+				toast.error(result.error || 'Błąd usuwania');
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
@@ -37,11 +32,11 @@
 			);
 			const result = await res.json();
 			if (result.downloadUrl) {
-				showToast(`Pobieranie: ${fileName}`);
+				toast.info(`Pobieranie: ${fileName}`);
 				window.location.href = result.downloadUrl;
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
@@ -53,19 +48,19 @@
 				method: 'DELETE'
 			});
 			if (res.ok) {
+				toast.success(`Usunięto: ${folderName}`);
 				invalidateAll();
-				showToast(`Usunięto: ${folderName}`);
 			} else {
 				const result = await res.json();
-				alert(result.error || 'Błąd usuwania');
+				toast.error(result.error || 'Błąd usuwania');
 			}
 		} catch (e: any) {
-			alert(e.message);
+			toast.error(e.message);
 		}
 	}
 
 	function downloadFolder(folderId: string, folderName: string) {
-		showToast(`Pobieranie: ${folderName}.zip`);
+		toast.info(`Pobieranie: ${folderName}.zip`);
 		window.location.href = `/api/folders/${folderId}/download?targetUserId=${data.targetUser.$id}`;
 	}
 </script>
@@ -285,9 +280,3 @@
 		{/if}
 	</main>
 </div>
-
-{#if toastMessage}
-	<div class="fixed right-4 bottom-4 rounded-lg bg-gray-800 px-4 py-3 text-white shadow-lg">
-		{toastMessage}
-	</div>
-{/if}

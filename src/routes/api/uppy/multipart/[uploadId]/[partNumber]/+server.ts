@@ -1,4 +1,4 @@
-import { env } from '$env/dynamic/private';
+import { ENV } from '$lib/server/env';
 import { R2 } from '$lib/clients/r2';
 import { UploadPartCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -25,7 +25,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	}
 
 	const command = new UploadPartCommand({
-		Bucket: env.R2_BUCKET_NAME,
+		Bucket: ENV.R2_BUCKET_NAME,
 		Key: key,
 		UploadId: uploadId,
 		PartNumber: partNumber
